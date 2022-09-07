@@ -1,0 +1,208 @@
+use plixo.schematic.project.Project;
+use plixo.schematic.Path;
+use plixo.schematic.Atic;
+use plixo.schematic.tokens.Node;
+use plixo.schematic.tokens.Tokenizer;
+
+fn Main() {
+    let project: Project = {
+        entries = newMap(),
+        file = "res/res2",
+        units = newList(),
+        extensions = ["atic"]
+    }
+    compileProject(project);
+
+}
+
+fn compileProject(project: Project) {
+    let files: List<string> = newList();
+    forFile(project.file,files);
+
+    let units: List<Unit> = newList();
+    forEach(files, fn (ref: string) -> void {
+        if containsArray(project.extensions, getExtension(ref)) {
+            let src: string = loadFile(ref);
+            let path: Path = newPath("path");
+            let unit: Unit = { path = path, src = src, node = Optional.None()};
+            insert(units, unit);
+        } else {
+            print("Dont include " + getExtension(ref));
+        }
+    });
+
+    let tokenList: List<Token> = genTokenList();
+
+    let errorRef: Ref<Optional<AticError>> = Ref(Optional.None());
+    if !forEachWhile(units, fn (ref: Unit) -> bool {
+           let node: Result<Node,AticError> = generateNode(ref.src,tokenList);
+           if node matches Error(error) {
+                errorRef.value = Optional.Some(error);
+                return false;
+           } else matches Ok(node) {
+                ref.node = Optional.Some(node);
+                return true;
+           }
+    }) {
+        let errorValue: Optional<AticError> = errorRef.value;
+        if errorValue matches Some(error) {
+            print("Error: " + toString(error));
+        }
+    }
+
+
+}
+
+fn generateNode(src: string, tokens: List<Token>) -> Result<Node,AticError> {
+    let list: List<TokenRecord> = newList();
+
+    let lineCount: Ref<number> = Ref(0);
+    let error: Optional<AticError> = findAny(split(src,"\n"), fn (line: string) -> Optional<AticError> {
+        let result: Result<List<TokenRecord>,AticError> = generateTokens(tokens,line,lineCount.value);
+        lineCount.value = lineCount.value + 1;
+        if result matches Error(error_) {
+           return Optional.Some(error_);
+        } else matches Ok(list_) {
+            addAll(list,list_);
+            return Optional.None();
+        }
+    });
+
+    if error matches Some(t) {
+        return Result.Error(t);
+    } else matches None() {
+         print("Output: " );
+         let filtered: List<TokenRecord> = filter(list, fn (token: TokenRecord) -> bool {
+                if token.token.alias == "#comment" return false;
+                else if token.token.alias == "#whitespace" return false;
+                else return true;
+         });
+         forEach(filtered, fn (tokenSub: TokenRecord) -> void {
+             print("Data: "+ tokenSub.data);
+         });
+        return Result.Ok(list);
+    }
+
+}
+
+fn forFile(file: string, list: List<string>) {
+    if isDirectory(file) {
+        let files: List<string> = listFiles(file);
+        forEach(files,fn (ref: string) -> void {
+            forFile(ref,list);
+        });
+    } else {
+        insert(list,file);
+    }
+}
+
+fn genTokenList() -> List<Token> {
+    let list: List<Token> = newList();
+
+    let A_comment: Token = genToken("#comment", "\\/\\/", "\\/\\/.*");
+    let A_whitespace: Token = genToken("#whitespace", "\\s", "\\s*");
+    let A_assign_arrow: Token = genToken("->", "->", "(-|->)");
+    let A_parentheses_o: Token = genToken("(", "\\(", "\\(");
+    let A_parentheses_c: Token = genToken(")", "\\)", "\\)");
+    let A_braces_o: Token = genToken("{", "\\{", "\\{");
+    let A_braces_c: Token = genToken("}", "\\}", "\\}");
+    let A_bracket_o: Token = genToken("[", "\\[", "\\[");
+    let A_bracket_c: Token = genToken("]", "\\]", "\\]");
+    let A_separator: Token = genToken(",", "\\,", "\\,");
+    let A_non_equals: Token = genToken("!=", "!=", "(!=|!)");
+    let A_equals: Token = genToken("==", "==", "(==|=)");
+    let A_smaller_equals: Token = genToken("<=", "<=", "(<=|<)");
+    let A_greater_equals: Token = genToken(">=", ">=", "(>=|>)");
+    let A_or: Token = genToken("||", "\\|\\|", "(\\||\\|\\|)");
+    let A_and: Token = genToken("&&", "\\&\\&", "(\\&|\\&\\&)");
+    let A_not: Token = genToken("!", "\\!", "\\!");
+    let A_plus: Token = genToken("+", "\\+", "(\\+)");
+    let A_minus: Token = genToken("-", "\\-", "(\\-)");
+    let A_mul: Token = genToken("*", "\\*", "(\\*)");
+    let A_div: Token = genToken("/", "\\/", "(\\/)");
+    let A_greater: Token = genToken("<", "<", "(<)");
+    let A_string: Token = genToken("string","\"", "");
+    let A_smaller: Token = genToken(">", ">", "(>)");
+    let A_function: Token = genToken("fn", "fn\\b", "(fn|f)");
+    let A_list: Token = genToken("lst", "lst\\b", "(l|ls|lst)");
+    let A_let: Token = genToken("let", "let\\b", "(let|le|l)");
+    let A_use: Token = genToken("use", "use\\b", "(use|us|e)");
+    let A_if: Token = genToken("if", "if\\b", "(if|i)");
+    let A_else: Token = genToken("else", "else\\b", "(else|els|el|e)");
+    let A_const: Token = genToken("const", "const\\b", "(const|cons|con|co|c)");
+    let A_while: Token = genToken("while", "while\\b", "(while|whil|whi|wh|w)");
+    let A_enum: Token = genToken("enum", "enum\\b", "(enum|enu|en|e)");
+    let A_match: Token = genToken("match", "match\\b", "(match|matc|mat|ma|m)");
+    let A_matches: Token = genToken("matches", "matches\\b", "(matches|matche|match|matc|mat|ma|m)");
+    let A_global: Token = genToken("global", "global\\b", "(global|globa|glob|glo|gl|g)");
+    let A_true: Token = genToken("true", "true\\b", "(true|tru|tr|t)");
+    let A_false: Token = genToken("false", "false\\b", "(false|fals|fal|fa|f)");
+    let A_logic: Token = genToken("logic", "logic\\b", "(logic|logi|log|lo|l)");
+    let A_native: Token = genToken("native", "native\\b", "(native|nativ|nati|nat|na|n)");
+    let A_strict: Token = genToken("strict", "strict\\b", "(strict|stric|stri|str|st|s)");
+    let A_async: Token = genToken("async", "async\\b", "(async|asyn|asy|as|a)");
+    let A_struct: Token = genToken("struct", "struct\\b", "(struct|struc|stru|str|st|s)");
+    let A_return: Token = genToken("return", "return\\b", "(return|retur|retu|ret|re|r)");
+    let A_number: Token = genToken("number", "[0-9]", "[0-9\\.]+");
+    let A_keyword: Token = genToken("keyword", "\\w", "\\w+");
+    let A_colon: Token = genToken(":", ":", ":");
+    let A_semicolon: Token = genToken(";", ";", ";");
+    let A_dot: Token = genToken(".", "\\.", "\\.");
+    let A_assign: Token = genToken("=", "=", "=");
+    let A_end_of_file: Token = genToken("EOF", "$a^", "$a^");
+
+    insert(list, A_comment);
+    insert(list, A_whitespace);
+    insert(list, A_assign_arrow);
+    insert(list, A_parentheses_o);
+    insert(list, A_parentheses_c);
+    insert(list, A_braces_o);
+    insert(list, A_braces_c);
+    insert(list, A_bracket_o);
+    insert(list, A_bracket_c);
+    insert(list, A_separator);
+    insert(list, A_non_equals);
+    insert(list, A_equals);
+    insert(list, A_smaller_equals);
+    insert(list, A_greater_equals);
+    insert(list, A_or);
+    insert(list, A_and);
+    insert(list, A_not);
+    insert(list, A_plus);
+    insert(list, A_minus);
+    insert(list, A_mul);
+    insert(list, A_div);
+    insert(list, A_greater);
+    insert(list, A_string);
+    insert(list, A_smaller);
+    insert(list, A_function);
+    insert(list, A_list);
+    insert(list, A_let);
+    insert(list, A_use);
+    insert(list, A_if);
+    insert(list, A_else);
+    insert(list, A_const);
+    insert(list, A_while);
+    insert(list, A_enum);
+    insert(list, A_match);
+    insert(list, A_matches);
+    insert(list, A_global);
+    insert(list, A_true);
+    insert(list, A_false);
+    insert(list, A_logic);
+    insert(list, A_native);
+    insert(list, A_strict);
+    insert(list, A_async);
+    insert(list, A_struct);
+    insert(list, A_return);
+    insert(list, A_number);
+    insert(list, A_keyword);
+    insert(list, A_colon);
+    insert(list, A_semicolon);
+    insert(list, A_dot);
+    insert(list, A_assign);
+    insert(list, A_end_of_file);
+
+    return list;
+}
+

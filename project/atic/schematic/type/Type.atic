@@ -1,0 +1,42 @@
+use plixo.schematic.Path;
+use plixo.schematic.Atic;
+
+enum Type {
+    Struct(StructType);
+    Array(ArrayType);
+    Function(FunctionType);
+    Enum(EnumType);
+    Primitive(number);
+}
+
+struct ArrayType {
+    type: Type
+}
+
+struct FunctionType {
+     input: List<Type>
+     output: Type
+}
+
+struct StructType {
+    members: List<Type>;
+    path: Path;
+}
+//static inferred (structural/Nominal) type system
+struct EnumType {
+
+    path: Path;
+}
+
+struct GenericProxy {
+    resolvedType: Optional<Type>;
+
+}
+
+
+global number_: Type = Type.Primitive(0);
+global bool_: Type = Type.Primitive(1);
+global void_: Type = Type.Primitive(2);
+
+
+

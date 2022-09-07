@@ -1,0 +1,35 @@
+use plixo.schematic.tokens.Tokenizer;
+use plixo.schematic.Atic;
+
+struct Node {
+    record: TokenRecord;
+    name: string;
+    isLeaf: bool;
+    children: List<Node>;
+}
+
+fn getNode(this: Node, name: string) -> Optional<Node> {
+    let i: number = 0;
+    while i < this.children.size {
+        let child: Node = getAt(this.children,i);
+        if child.name == name {
+            return Optional.Some(child);
+        }
+
+        i = i + 1;
+    }
+
+    return Optional.None();
+}
+
+fn isPresent(this: Node, name: string) -> bool {
+    let n: Optional<Node> = getNode(this, name);
+    if n matches Some(_) {
+        return true;
+    }
+    return false;
+}
+
+fn child(this: Node) -> Node {
+    return getAt(this.children,0);
+}

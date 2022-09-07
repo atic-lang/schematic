@@ -1,0 +1,9 @@
+
+struct TokenStream<T> {
+    size: number;
+    hasEntriesLeft: fn() -> bool;
+}
+
+fn <T> generateTokenStream(list: List<T>) -> TokenStream<T> {
+    return TokenStream(0, fn () -> bool { return true; });
+}

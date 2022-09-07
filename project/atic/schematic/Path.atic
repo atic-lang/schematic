@@ -1,0 +1,13 @@
+use plixo.schematic.Atic;
+
+struct Path {
+    path: string
+}
+
+fn newPath(file: string) -> Path {
+    return Path(file);
+}
+
+fn pathAdd(path: Path, pathB: Path) -> Path {
+    return Path(path.path + "." + pathB.path);
+}

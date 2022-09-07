@@ -1,0 +1,54 @@
+use plixo.schematic.type.Type;
+use plixo.schematic.Path;
+use plixo.schematic.Atic;
+use plixo.schematic.project.Project;
+
+enum Location {
+    Global();
+    Local();
+    Input();
+    Closure();
+}
+
+enum Modifier {
+    Final();
+    Variable();
+}
+
+struct Context {
+    environment: Environment;
+    variables: List<Variable>;
+    returnType: Type;
+}
+
+fn ContextCopy(context: Context) -> Context {
+    let list: List<Variable> = newList();
+    addAll(list,context.variables);
+    return Context(
+        context.environment,
+        list,
+        context.returnType
+    );
+}
+
+
+fn askForLocal(context: Context, name: string) -> Optional<Variable> {
+    return Optional.None();
+}
+
+fn askForGlobal(context: Context, path: Path) -> Optional<PathEntry> {
+    let entry: Optional<PathEntry> = getEntry(context.environment,path);
+    return entry;
+}
+
+struct Environment {
+    path: Path;
+    project: Project;
+}
+
+struct Variable {
+    name: string;
+    type: Type;
+    location: Location;
+    modifier: Modifier;
+}

@@ -1,0 +1,81 @@
+use plixo.schematic.Atic;
+
+struct Token {
+    alias: string;
+    peek: fn (string) -> bool;
+    capture: fn (string) -> bool;
+}
+
+struct TokenRecord {
+    token: Token;
+    data: string;
+    position: Position;
+}
+
+
+fn generateTokens(tokens: List<Token>, text: string, line: number) -> Result<List<TokenRecord>,AticError> {
+    let list: List<TokenRecord> = newList();
+    let charCount: number = 0;
+    let length_: number = length(text);
+    let capturedChars: string = "";
+
+    while charCount < length_ {
+        let subString: string = substring(text,charCount);
+        let tokenC: Optional<Token> = findToken(subString,tokens);
+        if tokenC matches None() {
+            return Result.Error(AticError(Position(charCount, charCount+1, line), "invalid token " + subString));
+        } else matches Some(token_) {
+            let token: Token = token_;
+            capturedChars = capturedChars + charAt(text, charCount);
+            let countCopy: number = charCount;
+            charCount = charCount + 1;
+            let flag: bool = true;
+            while charCount < length_ && flag {
+                 capturedChars = capturedChars + charAt(text, charCount);
+                 charCount = charCount + 1;
+
+                 if !token.capture(capturedChars) {
+                    capturedChars = substring2(capturedChars,0,length(capturedChars)-1);
+                    charCount = charCount - 1;
+                    flag = false;
+                 }
+            }
+
+            let record: TokenRecord = TokenRecord(
+                token,
+                capturedChars,
+                Position(countCopy,charCount,line),
+            );
+            insert(list,record);
+            capturedChars = "";
+        }
+    }
+    return Result.Ok(list);
+}
+
+fn findToken(str: string, list: List<Token>) -> Optional<Token> {
+     let i: number = 0;
+     let s: number = list.size;
+
+     while i < s {
+         let element: Token = getAt(list,i);
+         if element.peek(str) {
+            return Optional.Some(element);
+         }
+         i = i + 1;
+     }
+
+    return Optional.None();
+}
+
+fn genToken(alias: string, peek: string, capture: string) -> Token  {
+    return {
+        alias = alias,
+        peek = fn (text: string) -> bool {
+            return regexTest(text, "^" + peek);
+        },
+        capture = fn (text_: string) -> bool {
+            return regexTest(text_, "^" + capture + "$");
+        }
+    };
+}

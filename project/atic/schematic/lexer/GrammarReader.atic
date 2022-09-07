@@ -1,0 +1,128 @@
+use plixo.schematic.Atic;
+use plixo.schematic.tokens.Tokenizer;
+use plixo.schematic.tokens.TokenStream;
+
+
+fn generateRule(lines: List<string>) -> Result<RuleSet,AticError> {
+    let resolves: List<fn() -> void> = newList();
+    let tokens: List<Token> = genReaderTokens();
+    let rules: List<Rule> = newList();
+
+    let lineCount: Ref<number> = Ref(0);
+    let error: Optional<AticError> = findAny(lines, fn (line: string) -> Optional<AticError> {
+        let lineCounter: number = lineCount.value;
+         let result: Result<List<TokenRecord>,AticError> = generateTokens(tokens,line,lineCounter);
+         lineCount.value = lineCount.value + 1;
+         if result matches Error(error) {
+            return Optional.Some(error);
+         } else matches Ok(list) {
+            let stream: TokenStream<TokenRecord> = generateTokenStream(list);
+            if stream.size == 0 {
+                return Optional.None();
+            }
+
+            if testToken(stream, "comment") {
+                return Optional.None();
+            }
+
+            //let rule: Result<Rule,string> = genRule(stream, fn(name: string, entry: Entry) -> void {
+            //});
+            //if rule matches Error(error) {
+            //    return Optional.Some(AticError(Position(-1,-1,lineCounter),error));
+            //}
+
+            return Optional.None();
+         }
+     });
+     if error matches Some(error) {
+        return Result.Error(error);
+     }
+    return Result.Ok(RuleSet(rules));
+}
+
+
+
+fn genRule(stream: TokenStream<TokenRecord>, callback:  fn (string, Entry) -> void) -> Result<Rule,string> {
+    let sentences: List<Sentence> = newList();
+
+    let name_: Optional<string> = assertToken(stream,"keyword");
+    if name_ matches None() {
+        return Result.Error("Cant find keyword");
+    } else matches Some(name) {
+        consume(stream);
+
+        if assertToken(stream,"ASSIGN") matches None() {
+            return Result.Error("Cant find Assign");
+        }
+        consume(stream);
+
+        while stream.hasEntriesLeft() {
+
+            while stream.hasEntriesLeft() && !testToken(stream, "or") {
+
+            }
+
+        }
+        return Result.Error("Cant find test");
+    }
+
+
+}
+
+fn consume(stream: TokenStream<TokenRecord>) {
+
+}
+
+fn testToken(stream: TokenStream<TokenRecord>, type: string) -> bool {
+    return false;
+}
+
+fn assertToken(stream: TokenStream<TokenRecord>, type: string) -> Optional<string> {
+    return Optional.Some("Test");
+}
+
+struct RuleSet {
+    rules: List<Rule>;
+}
+
+struct Rule {
+    name: string;
+    sentences: List<Sentence>;
+}
+
+struct Sentence {
+    entries: List<Entry>;
+}
+
+struct Entry {
+    literal: string;
+    rule: Rule;
+    isHidden: bool;
+    isConcrete: bool;
+}
+
+
+
+fn genReaderTokens() -> List<Token> {
+    let list: List<Token> = newList();
+
+    let keyword: Token = genToken("keyword","[a-zA-Z]", "\\w+$");
+    let whitespace: Token = genToken("whitespace","\\s", "\\s*");
+    let assign: Token = genToken("assign",":=", "(:|:=)");
+    let literal: Token = genToken("literal","\"", "((\\\"[^\\\"]*\\\")|(\\\"[^\\\"]*))");
+    let or: Token = genToken("or","\\|", "\\|");
+    let hidden: Token = genToken("hidden","\\?", "\\?");
+    let concrete: Token = genToken("concrete","\\!", "\\!");
+    let comment: Token = genToken("comment","//", "//.*");
+
+    insert(list,keyword);
+    insert(list,whitespace);
+    insert(list,assign);
+    insert(list,literal);
+    insert(list,or);
+    insert(list,hidden);
+    insert(list,concrete);
+    insert(list,comment);
+
+    return list;
+}

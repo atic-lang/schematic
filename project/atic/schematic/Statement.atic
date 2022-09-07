@@ -1,0 +1,53 @@
+use plixo.schematic.Expression;
+use plixo.schematic.Context;
+use plixo.schematic.Member;
+use plixo.schematic.Atic;
+
+enum Statement {
+    Block(BlockStatement);
+    Assign(AssignStatement);
+    Branch(BranchStatement);
+    Declaration(DeclarationStatement);
+    Return(ReturnStatement);
+    Single(SingleStatement);
+    While(WhileStatement);
+}
+
+struct BlockStatement {
+    list: List<Statement>
+}
+
+struct AssignStatement {
+    expression: Expression;
+    member: Member;
+}
+
+struct BranchStatement {
+    expression: Expression;
+    thenStatement: Statement;
+    elseStatement: Statement;
+}
+
+struct DeclarationStatement {
+    expression: Expression;
+    variable: Variable;
+}
+
+struct MatchStatement {
+    defaultStatement:  Optional<Statement>;
+    expression: Expression;
+
+}
+
+struct ReturnStatement {
+    expression: Optional<Expression>;
+}
+
+struct SingleStatement {
+    expression: Expression;
+}
+
+struct WhileStatement {
+    expression: Expression;
+    statement: Statement;
+}

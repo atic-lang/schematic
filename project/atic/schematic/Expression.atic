@@ -1,0 +1,74 @@
+use plixo.schematic.Member;
+use plixo.schematic.type.Type;
+use plixo.schematic.Context;
+use plixo.schematic.tokens.Tokenizer;
+use plixo.schematic.Atic;
+
+enum Expression {
+    Bool(BoolExpression);
+    Object(Complex);
+}
+
+enum BoolExpression {
+    Implemented(ComparisonExpression, Operator, BoolExpression);
+    Normal(ComparisonExpression);
+}
+
+enum ComparisonExpression {
+    Implemented(ArithmeticExpression, Operator, ComparisonExpression);
+    Normal(ArithmeticExpression);
+}
+
+enum ArithmeticExpression {
+    Implemented(Term, Operator, ArithmeticExpression);
+    Normal(Term);
+}
+
+enum Term {
+   Implemented(Factor, Operator, Term);
+   Normal(Factor);
+}
+
+enum Factor {
+    Expression(Expression);
+    Number(number);
+    BoolLiteral(bool);
+    Not(Factor);
+    NegUnary(Factor);
+    Member(Member);
+}
+
+struct Complex {
+
+}
+
+
+fn factorType(factor: Factor, context: Context) -> Result<Type,AticError> {
+     match factor {
+        Expression(expression) -> return expressionType(expression,context);
+        Number(_) -> return Result.Ok(number_);
+        BoolLiteral(_) -> return Result.Ok(bool_);
+        Not(factor) -> return factorType(factor,context);
+        NegUnary(factor) -> return factorType(factor,context);
+        Member(member) -> return MemberType(member, context);
+    }
+}
+
+fn expressionType(expression: Expression, context: Context) -> Result<Type,AticError> {
+    return Result.Ok(Type.Primitive(-1));
+}
+
+enum Operator {
+    Add();
+    Subtract();
+    Multiply();
+    Divide();
+    Or();
+    And();
+    Greater();
+    GreaterEq();
+    Smaller();
+    SmallerEq();
+    Equals();
+    NonEquals();
+}

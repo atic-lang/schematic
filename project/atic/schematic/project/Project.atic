@@ -1,0 +1,43 @@
+use plixo.schematic.Path;
+use plixo.schematic.Context;
+use plixo.schematic.tokens.Tokenizer;
+use plixo.schematic.tokens.Node;
+use plixo.schematic.Atic;
+
+enum PathEntry {
+    Function();
+    Enum();
+    Global();
+    Interface();
+}
+
+struct Project {
+    entries: Map<Path,PathEntry>;
+    file: string;
+    units: List<Unit>;
+    extensions: lst string;
+}
+
+
+
+fn getEntry(environment: Environment, path: Path, ) -> Optional<PathEntry> {
+    let main: Optional<PathEntry> = get(environment.project.entries,path);
+    if main matches Some(entry) {
+        return Optional.Some(entry);
+    } else {
+        let spath: Path = pathAdd(environment.path,path);
+        let other: Optional<PathEntry> = get(environment.project.entries,spath);
+        if other matches Some(entry) {
+           return Optional.Some(entry);
+        } else {
+            return Optional.None();
+        }
+    }
+
+}
+
+struct Unit {
+    path: Path;
+    src: string;
+    node: Optional<Node>;
+}

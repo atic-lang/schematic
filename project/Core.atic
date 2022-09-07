@@ -1,0 +1,105 @@
+enum Optional<T> {
+    None();
+    Some(T);
+}
+
+enum Result<T,E> {
+    Error(E);
+    Ok(T);
+}
+
+native struct List<T> {
+    size: number;
+}
+
+native struct Map<K,V> {
+
+}
+
+struct Ref<T> {
+    value: T;
+}
+
+fn <T> forEach(list: List<T>,consumer: fn(T) -> void) {
+    let i: number = 0;
+    let s: number = list.size;
+
+    while i < s {
+        let element: T = getAt(list,i);
+        consumer(element);
+        i = i + 1;
+    }
+}
+
+fn <T> forEachWhile(list: List<T>,consumer: fn(T) -> bool) -> bool {
+    let i: number = 0;
+    let s: number = list.size;
+    while i < s {
+        let element: T = getAt(list,i);
+        if !consumer(element) {
+           return false;
+        }
+        i = i + 1;
+    }
+    return true;
+}
+
+fn <T> filter(list: List<T>,predicate: fn(T) -> bool) -> List<T> {
+    let newLst: List<T> = newList();
+
+    let i: number = 0;
+    let s: number = list.size;
+
+    while i < s {
+        let element: T = getAt(list,i);
+        if predicate(element) {
+            insert(newLst,element);
+        }
+        i = i + 1;
+    }
+
+    return newLst;
+}
+
+fn <T> findAny(list: List<T>, predicate: fn(T) -> Optional<T>) -> Optional<T> {
+    let newLst: List<T> = newList<T>();
+
+    let i: number = 0;
+    let s: number = list.size;
+
+    while i < s {
+        let element: T = getAt(list,i);
+        if predicate(element) matches Some(res) {
+            return Optional.Some(res);
+        }
+        i = i + 1;
+    }
+
+    return Optional.None();
+}
+
+native fn <T> print(o: T) {}
+native fn <T> insert(list: List<T>, element: T) {}
+native fn <T> newList() -> List<T> {}
+native fn <K,V> newMap() -> Map<K,V> {}
+native fn <T> addAll(list: List<T>, elements: List<T>) {}
+
+
+native fn <K,V> get(map: Map<K,V>, key: K) -> Optional<V> {}
+native fn <K,V> put(map: Map<K,V>, key: K, value: V) {}
+native fn <T> getAt(map: List<T>, index: number) -> T {}
+native fn <T> contains(list: List<T>, element: T) -> bool {}
+native fn <T> containsArray(list: lst T, element: T) -> bool {}
+
+
+native fn isDirectory(file: string) -> bool {}
+native fn listFiles(file: string) -> List<string> {}
+native fn loadFile(file: string) -> string {}
+native fn getExtension(file: string) -> string {}
+native fn regexTest(text: string, regex: string) -> bool {}
+native fn <T> toString(object: T) -> string {}
+native fn <T> length(text: string) -> number {}
+native fn <T> substring(text: string,count: number) -> string {}
+native fn <T> substring2(text: string,from: number, to: number) -> string {}
+native fn <T> charAt(text: string,index: number) -> string {}
+native fn <T> split(text: string,pattern: string) -> List<string> {}
