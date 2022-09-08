@@ -1,7 +1,7 @@
-use plixo.schematic.Expression;
-use plixo.schematic.Context;
-use plixo.schematic.Member;
-use plixo.schematic.Atic;
+use atic.schematic.Expression;
+use atic.schematic.Context;
+use atic.schematic.Member;
+use atic.schematic.Atic;
 
 enum Statement {
     Block(BlockStatement);
@@ -36,7 +36,6 @@ struct DeclarationStatement {
 struct MatchStatement {
     defaultStatement:  Optional<Statement>;
     expression: Expression;
-
 }
 
 struct ReturnStatement {

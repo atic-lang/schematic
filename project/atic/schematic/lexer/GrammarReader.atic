@@ -1,58 +1,54 @@
-use plixo.schematic.Atic;
-use plixo.schematic.tokens.Tokenizer;
-use plixo.schematic.tokens.TokenStream;
+use atic.schematic.Atic;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.TokenStream;
 
 
 fn generateRule(lines: List<string>) -> Result<RuleSet,AticError> {
-    let resolves: List<fn() -> void> = newList();
+    let resolves: List<fn() -> void> = newList<fn() -> void>();
     let tokens: List<Token> = genReaderTokens();
-    let rules: List<Rule> = newList();
+    let rules: List<Rule> = newList<Rule>();
 
     let lineCount: Ref<number> = Ref(0);
     let error: Optional<AticError> = findAny(lines, fn (line: string) -> Optional<AticError> {
         let lineCounter: number = lineCount.value;
-         let result: Result<List<TokenRecord>,AticError> = generateTokens(tokens,line,lineCounter);
-         lineCount.value = lineCount.value + 1;
-         if result matches Error(error) {
+        let result: Result<List<TokenRecord>,AticError> = generateTokens(tokens,line,lineCounter);
+        lineCount.value = lineCount.value + 1;
+        if result matches Error(error) {
             return Optional.Some(error);
-         } else matches Ok(list) {
+        } else matches Ok(list) {
             let stream: TokenStream<TokenRecord> = generateTokenStream(list);
             if stream.size == 0 {
-                return Optional.None();
+                return Optional.None<AticError>();
             }
 
             if testToken(stream, "comment") {
-                return Optional.None();
+                return Optional.None<AticError>();
             }
 
-            //let rule: Result<Rule,string> = genRule(stream, fn(name: string, entry: Entry) -> void {
-            //});
-            //if rule matches Error(error) {
-            //    return Optional.Some(AticError(Position(-1,-1,lineCounter),error));
-            //}
-
-            return Optional.None();
+            return Optional.None<AticError>();
          }
      });
-     if error matches Some(error) {
-        return Result.Error(error);
+     if error matches Some(error_) {
+        return Result.Error<RuleSet,AticError>(error_);
      }
-    return Result.Ok(RuleSet(rules));
+
+     let rule_s: RuleSet = RuleSet(rules);
+     return Result.Ok<RuleSet,AticError>(rule_s);
 }
 
 
 
 fn genRule(stream: TokenStream<TokenRecord>, callback:  fn (string, Entry) -> void) -> Result<Rule,string> {
-    let sentences: List<Sentence> = newList();
+    let sentences: List<Sentence> = newList<Sentence>();
 
     let name_: Optional<string> = assertToken(stream,"keyword");
     if name_ matches None() {
-        return Result.Error("Cant find keyword");
+        return Result.Error<Rule,string>("Cant find keyword");
     } else matches Some(name) {
         consume(stream);
 
         if assertToken(stream,"ASSIGN") matches None() {
-            return Result.Error("Cant find Assign");
+            return Result.Error<Rule,string>("Cant find Assign");
         }
         consume(stream);
 
@@ -63,7 +59,7 @@ fn genRule(stream: TokenStream<TokenRecord>, callback:  fn (string, Entry) -> vo
             }
 
         }
-        return Result.Error("Cant find test");
+        return Result.Error<Rule,string>("Cant find test");
     }
 
 
@@ -104,7 +100,7 @@ struct Entry {
 
 
 fn genReaderTokens() -> List<Token> {
-    let list: List<Token> = newList();
+    let list: List<Token> = newList<Token>();
 
     let keyword: Token = genToken("keyword","[a-zA-Z]", "\\w+$");
     let whitespace: Token = genToken("whitespace","\\s", "\\s*");

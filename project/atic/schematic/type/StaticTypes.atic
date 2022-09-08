@@ -1,0 +1,31 @@
+struct Enum {
+    path: Path;
+    generics: Generics;
+    properties: Properties;
+
+}
+
+struct Struct {
+    path: Path;
+    generics: Generics;
+    properties: Properties;
+    members: Map<string,Type>;
+}
+
+struct StaticFunction {
+    path: Path;
+    generics: Generics;
+    properties: Properties;
+    inputs: List<Type>;
+    output: Type;
+}
+
+
+struct Generics {
+
+}
+
+struct Properties {
+
+}
+

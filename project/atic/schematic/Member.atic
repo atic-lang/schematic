@@ -1,9 +1,9 @@
-use plixo.schematic.Path;
-use plixo.schematic.Expression;
-use plixo.schematic.Context;
-use plixo.schematic.type.Type;
-use plixo.schematic.tokens.Tokenizer;
-use plixo.schematic.Atic;
+use atic.schematic.Path;
+use atic.schematic.Expression;
+use atic.schematic.Context;
+use atic.schematic.type.Type;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.Atic;
 
 struct Member {
     type: MemberType
@@ -22,5 +22,5 @@ enum Access {
 }
 
 fn MemberType(member: Member, context: Context) -> Result<Type,AticError> {
-    return Result.Ok(Type.Primitive(-1));
+    return Result.Ok<Type,AticError>(Type.Primitive(-1));
 }

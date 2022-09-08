@@ -1,42 +1,35 @@
-use plixo.schematic.Path;
-use plixo.schematic.Atic;
+use atic.schematic.Path;
+use atic.schematic.Atic;
+use atic.schematic.type.StaticTypes;
 
 enum Type {
-    Struct(StructType);
-    Array(ArrayType);
-    Function(FunctionType);
-    Enum(EnumType);
-    Primitive(number);
+    Struct(StructImpl);
+    Enum(EnumImpl);
+    Function(Function);
+    Generic(GenericType);
 }
 
-struct ArrayType {
-    type: Type
+
+struct StructImpl {
+    type: Struct;
+    implementation: List<Type>
 }
 
-struct FunctionType {
-     input: List<Type>
-     output: Type
+struct EnumImpl {
+    type: Enum;
+    implementation: List<Type>
 }
 
-struct StructType {
-    members: List<Type>;
-    path: Path;
-}
-//static inferred (structural/Nominal) type system
-struct EnumType {
-
-    path: Path;
+struct Function {
+    type: StaticFunction;
+    implementation: List<Type>;
 }
 
-struct GenericProxy {
-    resolvedType: Optional<Type>;
+struct GenericType {
 
 }
 
 
-global number_: Type = Type.Primitive(0);
-global bool_: Type = Type.Primitive(1);
-global void_: Type = Type.Primitive(2);
 
 
 

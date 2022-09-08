@@ -6,8 +6,16 @@ struct Position {
     line: number;
 }
 
-struct AticError {
+
+exception struct NotFoundError {
+
+}
+
+exception struct AticError {
     position: Position;
     msg: string;
+}
+
+exception struct NotImplError {
 }
 

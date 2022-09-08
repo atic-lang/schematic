@@ -1,8 +1,8 @@
-use plixo.schematic.Member;
-use plixo.schematic.type.Type;
-use plixo.schematic.Context;
-use plixo.schematic.tokens.Tokenizer;
-use plixo.schematic.Atic;
+use atic.schematic.Member;
+use atic.schematic.type.Type;
+use atic.schematic.Context;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.Atic;
 
 enum Expression {
     Bool(BoolExpression);
@@ -44,18 +44,21 @@ struct Complex {
 
 
 fn factorType(factor: Factor, context: Context) -> Result<Type,AticError> {
-     match factor {
-        Expression(expression) -> return expressionType(expression,context);
-        Number(_) -> return Result.Ok(number_);
-        BoolLiteral(_) -> return Result.Ok(bool_);
-        Not(factor) -> return factorType(factor,context);
-        NegUnary(factor) -> return factorType(factor,context);
-        Member(member) -> return MemberType(member, context);
-    }
+
+   // match factor {
+   //    Expression(expression) -> return expressionType(expression,context);
+   //    Number(_) -> return Result.Ok(number_);
+   //    BoolLiteral(_) -> return Result.Ok(bool_);
+   //    Not(factor) -> return factorType(factor,context);
+   //    NegUnary(factor) -> return factorType(factor,context);
+   //    Member(member) -> return MemberType(member, context);
+   //}
+
+    return Result.Error<Type,AticError>(AticError(Position(-1,-1,-1),"not impl"));
 }
 
 fn expressionType(expression: Expression, context: Context) -> Result<Type,AticError> {
-    return Result.Ok(Type.Primitive(-1));
+    return Result.Ok<Type,AticError>(Type.Primitive(-1));
 }
 
 enum Operator {

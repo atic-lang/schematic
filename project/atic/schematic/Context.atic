@@ -1,7 +1,7 @@
-use plixo.schematic.type.Type;
-use plixo.schematic.Path;
-use plixo.schematic.Atic;
-use plixo.schematic.project.Project;
+use atic.schematic.type.Type;
+use atic.schematic.Path;
+use atic.schematic.Atic;
+use atic.schematic.project.Project;
 
 enum Location {
     Global();
@@ -22,7 +22,7 @@ struct Context {
 }
 
 fn ContextCopy(context: Context) -> Context {
-    let list: List<Variable> = newList();
+    let list: List<Variable> = newList<Variable>();
     addAll(list,context.variables);
     return Context(
         context.environment,
@@ -33,7 +33,7 @@ fn ContextCopy(context: Context) -> Context {
 
 
 fn askForLocal(context: Context, name: string) -> Optional<Variable> {
-    return Optional.None();
+    return Optional.None<Variable>();
 }
 
 fn askForGlobal(context: Context, path: Path) -> Optional<PathEntry> {

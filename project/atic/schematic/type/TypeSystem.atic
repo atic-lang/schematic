@@ -1,0 +1,35 @@
+
+struct MatchQuery {
+    toResolve: Set<GenericType>;
+    resolved: Map<GenericType,Type>;
+}
+
+
+fn test(a_: Type,b_: Type, query: MatchQuery) -> bool {
+    let a: Type = a_;
+    let b: Type = b_;
+
+    match a {
+        Struct(typeA) -> {
+            if b matches Struct(typeB) {
+
+            } else return false;
+        }
+        Enum(typeA) -> {
+            if b matches Enum(typeB) {
+
+            } else return false;
+        }
+        Function(typeA) -> {
+            if b matches Function(typeB) {
+
+            } else return false;
+        }
+        Generic(typeA) -> {
+            if b matches Generic(typeB) {
+
+            } else return false;
+        }
+    }
+
+}

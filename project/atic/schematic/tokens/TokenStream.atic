@@ -5,5 +5,5 @@ struct TokenStream<T> {
 }
 
 fn <T> generateTokenStream(list: List<T>) -> TokenStream<T> {
-    return TokenStream(0, fn () -> bool { return true; });
+    return TokenStream<T>(0, fn () -> bool { return true; });
 }

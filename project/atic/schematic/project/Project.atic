@@ -1,8 +1,8 @@
-use plixo.schematic.Path;
-use plixo.schematic.Context;
-use plixo.schematic.tokens.Tokenizer;
-use plixo.schematic.tokens.Node;
-use plixo.schematic.Atic;
+use atic.schematic.Path;
+use atic.schematic.Context;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.Node;
+use atic.schematic.Atic;
 
 enum PathEntry {
     Function();
@@ -23,14 +23,14 @@ struct Project {
 fn getEntry(environment: Environment, path: Path, ) -> Optional<PathEntry> {
     let main: Optional<PathEntry> = get(environment.project.entries,path);
     if main matches Some(entry) {
-        return Optional.Some(entry);
+        return Optional.Some<PathEntry>(entry);
     } else {
         let spath: Path = pathAdd(environment.path,path);
         let other: Optional<PathEntry> = get(environment.project.entries,spath);
         if other matches Some(entry) {
-           return Optional.Some(entry);
+           return Optional.Some<PathEntry>(entry);
         } else {
-            return Optional.None();
+            return Optional.None<PathEntry>();
         }
     }
 
