@@ -8,12 +8,12 @@ struct Node {
     children: List<Node>;
 }
 
-fn getNode(this: Node, name: string) -> Node throw NotFoundError {
+fn getNode(this: Node, name: string) -> Node {
     let i: number = 0;
     while i < this.children.size {
         let child: Node = getAt(this.children,i);
         if child.name == name {
-            return Optional.Some(child);
+            return child;
         }
 
         i = i + 1;
@@ -29,7 +29,6 @@ fn isPresent(this: Node, name: string) -> bool {
            if child.name == name {
                return true;
            }
-
            i = i + 1;
        }
 
@@ -38,4 +37,10 @@ fn isPresent(this: Node, name: string) -> bool {
 
 fn child(this: Node) -> Node {
     return getAt(this.children,0);
+}
+
+fn assertType(node: Node, name: string) {
+    if node.name != name {
+        throw AssertError("Unexpected Type " + name + " for type " + node.name);
+    }
 }

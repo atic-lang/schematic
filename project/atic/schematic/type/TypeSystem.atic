@@ -1,3 +1,6 @@
+use atic.schematic.Path;
+use atic.schematic.Atic;
+use atic.schematic.type.Type;
 
 struct MatchQuery {
     toResolve: Set<GenericType>;
@@ -12,22 +15,22 @@ fn test(a_: Type,b_: Type, query: MatchQuery) -> bool {
     match a {
         Struct(typeA) -> {
             if b matches Struct(typeB) {
-
+                return true;
             } else return false;
         }
         Enum(typeA) -> {
             if b matches Enum(typeB) {
-
+                return true;
             } else return false;
         }
         Function(typeA) -> {
             if b matches Function(typeB) {
-
+                return true;
             } else return false;
         }
         Generic(typeA) -> {
             if b matches Generic(typeB) {
-
+                return true;
             } else return false;
         }
     }

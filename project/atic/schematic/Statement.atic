@@ -2,6 +2,7 @@ use atic.schematic.Expression;
 use atic.schematic.Context;
 use atic.schematic.Member;
 use atic.schematic.Atic;
+use atic.schematic.tokens.Node;
 
 enum Statement {
     Block(BlockStatement);
@@ -49,4 +50,32 @@ struct SingleStatement {
 struct WhileStatement {
     expression: Expression;
     statement: Statement;
+}
+
+fn fromAST(node: Node, context: Context) -> Statement {
+    assertType(node,"statement");
+    let child_ = child(node);
+    let name = child_.name;
+
+    if name == "blockStatement" {
+        return Statement.Block(blockStatement(child_,context));
+    } else if name == "definitionStatement" {
+        return Statement.Declaration(definitionStatement(child_,context));
+    }
+
+
+    throw AssertError(name + " is not impl");
+
+}
+
+fn definitionStatement(node: Node, context: Context) -> DeclarationStatement {
+
+
+    throw NotImplError();
+}
+
+fn blockStatement(node: Node, context: Context) -> BlockStatement {
+
+
+    throw NotImplError();
 }

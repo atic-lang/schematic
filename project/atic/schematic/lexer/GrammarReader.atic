@@ -3,78 +3,126 @@ use atic.schematic.tokens.Tokenizer;
 use atic.schematic.tokens.TokenStream;
 
 
-fn generateRule(lines: List<string>) -> Result<RuleSet,AticError> {
+fn generateRuleSet(lines: List<string>) -> RuleSet {
     let resolves: List<fn() -> void> = newList<fn() -> void>();
     let tokens: List<Token> = genReaderTokens();
     let rules: List<Rule> = newList<Rule>();
 
     let lineCount: Ref<number> = Ref(0);
-    let error: Optional<AticError> = findAny(lines, fn (line: string) -> Optional<AticError> {
+    forEach(lines, fn (line: string) -> void {
         let lineCounter: number = lineCount.value;
-        let result: Result<List<TokenRecord>,AticError> = generateTokens(tokens,line,lineCounter);
+        let result: List<TokenRecord> = generateTokens(tokens,line,lineCounter);
         lineCount.value = lineCount.value + 1;
-        if result matches Error(error) {
-            return Optional.Some(error);
-        } else matches Ok(list) {
-            let stream: TokenStream<TokenRecord> = generateTokenStream(list);
-            if stream.size == 0 {
-                return Optional.None<AticError>();
-            }
 
-            if testToken(stream, "comment") {
-                return Optional.None<AticError>();
-            }
+        let filtered: List<TokenRecord> = filter(result, fn (token: TokenRecord) -> bool {
+            if token.token.alias == "whitespace" return false;
+            else return true;
+        });
 
-            return Optional.None<AticError>();
-         }
-     });
-     if error matches Some(error_) {
-        return Result.Error<RuleSet,AticError>(error_);
-     }
 
-     let rule_s: RuleSet = RuleSet(rules);
-     return Result.Ok<RuleSet,AticError>(rule_s);
+        let stream: TokenStream<TokenRecord> = generateTokenStream(filtered);
+        if filtered.size == 0 {
+            return;
+        }
+        if testToken(stream, "comment") {
+            return;
+        }
+
+        resolves;
+        rules;
+        let rule: Rule = genRule(stream, fn (name: string, ref: Entry) -> void {
+            let name_ = name;
+            let ref_ = ref;
+            rules;
+            let f: fn() -> void = fn () -> void {
+                 let found: Rule = findByName(rules,name_);
+                 ref_.rule = Optional.Some(found);
+            };
+            insert(resolves,f);
+        });
+
+        insert(rules,rule);
+
+    });
+    forEach(resolves,fn (func: fn() -> void) -> void {
+        func();
+    });
+
+    print(rules.size);
+    return RuleSet(rules);
 }
 
 
 
-fn genRule(stream: TokenStream<TokenRecord>, callback:  fn (string, Entry) -> void) -> Result<Rule,string> {
+fn genRule(stream: TokenStream<TokenRecord>, callback:  fn (string, Entry) -> void) -> Rule {
     let sentences: List<Sentence> = newList<Sentence>();
 
-    let name_: Optional<string> = assertToken(stream,"keyword");
-    if name_ matches None() {
-        return Result.Error<Rule,string>("Cant find keyword");
-    } else matches Some(name) {
-        consume(stream);
+    let name: string = assertToken(stream,"keyword");
+   // print("Name: " + name);
+    consume(stream);
+    assertToken(stream,"assign");
 
-        if assertToken(stream,"ASSIGN") matches None() {
-            return Result.Error<Rule,string>("Cant find Assign");
-        }
-        consume(stream);
+    consume(stream);
+    while hasEntriesLeft(stream) {
+        let entries: List<Entry> = newList<Entry>();
+        while hasEntriesLeft(stream) && !testToken(stream, "or") {
+            let data: string = current(stream).data;
+            if testToken(stream, "keyword") {
+                let e: Entry = Entry("",Optional.None<Rule>(),false,false);
+                insert(entries,e);
+                callback(data,e);
+                consume(stream);
+                if hasEntriesLeft(stream) && testToken(stream, "concrete") {
+                    consume(stream);
+                    e.isConcrete = true;
+                }
 
-        while stream.hasEntriesLeft() {
+            } else if testToken(stream, "literal") {
+                let subStr: string = substring2(data,1, length(data) - 1);
+                let e: Entry = Entry(subStr,Optional.None<Rule>(),false,false);
+                insert(entries,e);
+                consume(stream);
+                if hasEntriesLeft(stream) && testToken(stream, "hidden") {
+                    consume(stream);
+                    e.isHidden = true;
+                }
 
-            while stream.hasEntriesLeft() && !testToken(stream, "or") {
+                 if hasEntriesLeft(stream) && testToken(stream, "concrete") {
+                    consume(stream);
+                    e.isConcrete = true;
+                 }
 
+
+            } else {
+                throw NotFoundMsgError("expected literal or keyword, but got " + toString(current(stream)));
             }
-
         }
-        return Result.Error<Rule,string>("Cant find test");
+        consume(stream);
+        insert(sentences,Sentence(entries));
     }
-
-
+    return Rule(name,sentences);
 }
 
-fn consume(stream: TokenStream<TokenRecord>) {
 
-}
 
 fn testToken(stream: TokenStream<TokenRecord>, type: string) -> bool {
-    return false;
+    if !hasEntriesLeft(stream) {
+            //throw AssertError("stream has nothing left when testing");
+        return false;
+    }
+    let current_: TokenRecord = current(stream);
+    return current_.token.alias == type;
 }
 
-fn assertToken(stream: TokenStream<TokenRecord>, type: string) -> Optional<string> {
-    return Optional.Some("Test");
+fn assertToken(stream: TokenStream<TokenRecord>, type: string) -> string {
+    if !hasEntriesLeft(stream) {
+        throw AssertError("stream has nothing left");
+    }
+    let current_: TokenRecord = current(stream);
+    if current_.token.alias != type {
+       throw AssertError("Expected " + type + ", but got " + current_.token.alias);
+    }
+    return current_.data;
 }
 
 struct RuleSet {
@@ -92,12 +140,29 @@ struct Sentence {
 
 struct Entry {
     literal: string;
-    rule: Rule;
+    rule: Optional<Rule>;
     isHidden: bool;
     isConcrete: bool;
 }
 
+fn findByName(list: List<Rule>, name: string) -> Rule {
+     let i: number = 0;
+     let s: number = list.size;
 
+     while i < s {
+         let element: Rule = getAt(list,i);
+         if ignoreCase(element.name, name) {
+            return element;
+         }
+         i = i + 1;
+     }
+
+     forEach(list, fn (ru: Rule) -> void {
+        print(ru.name);
+     });
+
+    throw NotFoundMsgError("cant find " + name);
+}
 
 fn genReaderTokens() -> List<Token> {
     let list: List<Token> = newList<Token>();

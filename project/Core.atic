@@ -12,6 +12,10 @@ native struct List<T> {
     size: number;
 }
 
+native struct Set<T> {
+    size: number;
+}
+
 native struct Map<K,V> {
 
 }
@@ -103,3 +107,4 @@ native fn substring(text: string,count: number) -> string {}
 native fn substring2(text: string,from: number, to: number) -> string {}
 native fn charAt(text: string,index: number) -> string {}
 native fn split(text: string,pattern: string) -> List<string> {}
+native fn ignoreCase(textA: string, textB: string) -> bool {}

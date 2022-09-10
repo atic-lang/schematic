@@ -1,9 +1,22 @@
 
 struct TokenStream<T> {
     size: number;
-    hasEntriesLeft: fn() -> bool;
+    list: List<T>;
+    index: number;
 }
 
 fn <T> generateTokenStream(list: List<T>) -> TokenStream<T> {
-    return TokenStream<T>(0, fn () -> bool { return true; });
+    return TokenStream<T>(list.size, list,0);
+}
+
+fn <T> current(stream: TokenStream<T>) -> T {
+    return getAt(stream.list,stream.index);
+}
+
+fn <T> consume(stream: TokenStream<T>) {
+    stream.index = stream.index + 1;
+}
+
+fn <T> hasEntriesLeft(stream: TokenStream<T>) -> bool {
+    return stream.index < stream.size;
 }

@@ -1,3 +1,7 @@
+use atic.schematic.Path;
+use atic.schematic.Atic;
+use atic.schematic.type.Type;
+
 struct Enum {
     path: Path;
     generics: Generics;

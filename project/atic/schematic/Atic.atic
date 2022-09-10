@@ -11,11 +11,21 @@ exception struct NotFoundError {
 
 }
 
+
+exception struct NotFoundMsgError {
+    msg: string;
+}
+
+
 exception struct AticError {
     position: Position;
     msg: string;
 }
 
 exception struct NotImplError {
+
 }
 
+exception struct AssertError {
+    msg: string;
+}

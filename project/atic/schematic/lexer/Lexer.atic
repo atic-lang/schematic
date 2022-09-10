@@ -1,0 +1,17 @@
+use atic.schematic.project.Project;
+use atic.schematic.Path;
+use atic.schematic.Atic;
+use atic.schematic.tokens.Node;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.lexer.GrammarReader;
+
+fn reverseRule(ruleSet: RuleSet, entry: String, records: List<TokenRecord>) -> Node {
+    let rule: Rule = findByName(ruleSet.rules, entry);
+    let stream: TokenStream<TokenRecord> = generateTokenStream(records);
+    if hasEntriesLeft(stream) {
+        throw AssertError("steam has entries left");
+    } else {
+
+    }
+}
+

@@ -58,7 +58,8 @@ fn factorType(factor: Factor, context: Context) -> Result<Type,AticError> {
 }
 
 fn expressionType(expression: Expression, context: Context) -> Result<Type,AticError> {
-    return Result.Ok<Type,AticError>(Type.Primitive(-1));
+    //return Result.Ok<Type,AticError>(Type.Primitive(-1));
+    throw NotImplError();
 }
 
 enum Operator {

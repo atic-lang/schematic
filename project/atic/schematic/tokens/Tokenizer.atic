@@ -13,7 +13,7 @@ struct TokenRecord {
 }
 
 
-fn generateTokens(tokens: List<Token>, text: string, line: number) -> List<TokenRecord> throw AticError {
+fn generateTokens(tokens: List<Token>, text: string, line: number) -> List<TokenRecord> {
     let list: List<TokenRecord> = newList<TokenRecord>();
     let charCount: number = 0;
     let length_: number = length(text);

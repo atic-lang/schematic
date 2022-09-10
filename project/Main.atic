@@ -3,27 +3,38 @@ use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.tokens.Node;
 use atic.schematic.tokens.Tokenizer;
+use atic.schematic.lexer.GrammarReader;
+
 
 fn Main() {
-    let project: Project = {
-        entries = newMap(),
-        file = "res/res2",
-        units = newList(),
-        extensions = ["atic"]
-    }
-    compileProject(project);
+    let project: Project = Project(
+       newMap<Path,PathEntry>(),
+        "res/res2",
+        newList<Unit>(),
+        ["atic"]
+    );
+    //compileProject(project);
+    let src: string = loadFile("res/testGrammar.txt");
+   // print("loaded " + src);
+
+    let lines: List<string> = split(src,"\n");
+
+    let ruleSet = generateRuleSet(lines);
+
+    print("finish");
+    print("-------");
 }
 
 fn compileProject(project: Project) {
-    let files: List<string> = newList();
+    let files: List<string> = newList<string>();
     forFile(project.file,files);
 
-    let units: List<Unit> = newList();
+    let units: List<Unit> = newList<Unit>();
     forEach(files, fn (ref: string) -> void {
         if containsArray(project.extensions, getExtension(ref)) {
             let src: string = loadFile(ref);
             let path: Path = newPath("path");
-            let unit: Unit = { path = path, src = src, node = Optional.None()};
+            let unit: Unit = Unit(path,src, Optional.None<Node>());
             insert(units, unit);
         } else {
             print("Dont include " + getExtension(ref));
@@ -33,7 +44,7 @@ fn compileProject(project: Project) {
     let tokenList: List<Token> = genTokenList();
 
     forEach(units, fn (ref: Unit) -> void {
-           let node: Result<Node,AticError> = generateNode(ref.src,tokenList);
+           let node: Node = generateNode(ref.src,tokenList);
            ref.node = Optional.Some(node);
     });
 }
@@ -42,12 +53,11 @@ fn generateNode(src: string, tokens: List<Token>) -> Node {
     let list: List<TokenRecord> = newList<TokenRecord>();
 
     let lineCount: Ref<number> = Ref(0);
-    forEach(split(src,"\n"), fn (line: string) -> Optional<AticError> {
+    forEach(split(src,"\n"), fn (line: string) -> void {
         let result: List<TokenRecord> = generateTokens(tokens,line,lineCount.value);
         lineCount.value = lineCount.value + 1;
         addAll(list,result);
     });
-
 
    let filtered: List<TokenRecord> = filter(list, fn (token: TokenRecord) -> bool {
           if token.token.alias == "#comment" return false;
@@ -58,7 +68,7 @@ fn generateNode(src: string, tokens: List<Token>) -> Node {
        print("Data: "+ tokenSub.data);
    });
 
-    throw NotImplError();
+    throw AssertError("ERROR");
 }
 
 fn forFile(file: string, list: List<string>) {
