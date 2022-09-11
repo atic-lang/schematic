@@ -48,7 +48,6 @@ fn generateRuleSet(lines: List<string>) -> RuleSet {
         func();
     });
 
-    print(rules.size);
     return RuleSet(rules);
 }
 

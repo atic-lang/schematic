@@ -3,29 +3,46 @@ use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.tokens.Node;
 use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.TokenStream;
 use atic.schematic.lexer.GrammarReader;
 
-fn reverseRule(ruleSet: RuleSet, entry: String, records: List<TokenRecord>) -> Node {
+fn reverseRule(ruleSet: RuleSet, entry: string, records: List<TokenRecord>) -> Node {
     let rule: Rule = findByName(ruleSet.rules, entry);
     let stream: TokenStream<TokenRecord> = generateTokenStream(records);
-    if hasEntriesLeft(stream) {
-        throw AssertError("steam has entries left");
-    } else {
-
+    let nodeD: Optional<Node> = testRule(rule,stream)
+    if nodeD matches None() {
+        throw AssertError("could not parse");
+    } else matches Some(node_) {
+        if hasEntriesLeft(stream) {
+            while hasEntriesLeft(stream) {
+                let c = current(stream);
+                print(c);
+                consume(stream);
+            }
+            throw AssertError("steam has entries left");
+        } else {
+            return node_;
+        }
     }
 }
-fn testRule(Rule: rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+
+
+
+fn testRule(rule: Rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
     let list = rule.sentences;
     let i: number = 0;
     let s: number = list.size;
     while i < s {
         let sentence: Sentence = getAt(list,i);
         let index = stream.index;
-        if testSentence(sentence,stream) matches Some(node) {
-            node.name = rule.name;
-            node.data = current(stream);
-
-            return Optional.Some(node);
+        let result = testSentence(sentence,stream);
+        if result matches Some(nodeC) {
+            nodeC.name = rule.name;
+            if hasEntriesLeft(stream) {
+                nodeC.record = current(stream);
+            }
+            return Optional.Some(nodeC);
         } else matches None() {
             stream.index = index;
         }
@@ -54,13 +71,14 @@ fn testSentence(sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optiona
              if(entry.literal == record.token.alias) {
                 if !entry.isHidden {
                     //nodes.add(this.genLeaf(token));
-                    let node: Node =  Node(record,"",true,newList<Node>());
-                    insert(nodes,node);
+                    let nodeB: Node =  Node(record,"",true,newList<Node>());
+                    insert(nodes,nodeB);
                 }
                 consume(stream);
              } else {
                 if entry.isConcrete {
-                    throw FailedCapture(rule,record);
+                    throw FailedCapture(entry,record, "could not match keyword >" + entry.literal + "< to >" + record
+                    .token.alias + "<"  );
                 }
                 return Optional.None<Node>();
              }
@@ -69,14 +87,13 @@ fn testSentence(sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optiona
             if option matches None() {
                 if entry.isConcrete {
                     let record: TokenRecord = current(stream);
-                    throw FailedCapture(rule,record);
+                    throw FailedCapture(entry,record, "Failed to capture rule " + rule.name);
                 }
 
                 return Optional.None<Node>();
-            } else matches Some(node) {
-                insert(nodes,node);
+            } else matches Some(nodeA) {
+                insert(nodes,nodeA);
             }
-
         }
 
 
@@ -88,9 +105,7 @@ fn testSentence(sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optiona
 }
 
 exception struct FailedCapture {
-    rule: Rule;
+    entry: Entry;
     record: TokenRecord;
-
-
-
+    msg: string;
 }

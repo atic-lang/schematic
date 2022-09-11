@@ -4,28 +4,22 @@ use atic.schematic.Atic;
 use atic.schematic.tokens.Node;
 use atic.schematic.tokens.Tokenizer;
 use atic.schematic.lexer.GrammarReader;
+use atic.schematic.lexer.Lexer;
 
 
 fn Main() {
     let project: Project = Project(
-       newMap<Path,PathEntry>(),
+        newMap<Path,PathEntry>(),
         "res/res2",
         newList<Unit>(),
         ["atic"]
     );
-    //compileProject(project);
-    let src: string = loadFile("res/testGrammar.txt");
-   // print("loaded " + src);
-
-    let lines: List<string> = split(src,"\n");
-
-    let ruleSet = generateRuleSet(lines);
-
-    print("finish");
-    print("-------");
+    let src: string = loadFile("res/res2/testGrammar.txt");
+    let ruleSet = generateRuleSet(split(src,"\n"));
+    compileProject(project,ruleSet);
 }
 
-fn compileProject(project: Project) {
+fn compileProject(project: Project, rules: RuleSet) {
     let files: List<string> = newList<string>();
     forFile(project.file,files);
 
@@ -37,19 +31,34 @@ fn compileProject(project: Project) {
             let unit: Unit = Unit(path,src, Optional.None<Node>());
             insert(units, unit);
         } else {
-            print("Dont include " + getExtension(ref));
+            print("Dont include " + ref);
         }
     });
 
     let tokenList: List<Token> = genTokenList();
 
     forEach(units, fn (ref: Unit) -> void {
-           let node: Node = generateNode(ref.src,tokenList);
+           let node: Node = generateNode(ref.src, tokenList, rules);
            ref.node = Optional.Some(node);
+
+            let list: List<Node> = walk("top", "topList", node);
+            forEach(list, fn (n: Node) -> void {
+                if isPresent(n, "struct") {
+                    print("struct");
+                    let struct_ = getNode(n,"struct");
+                } else if isPresent(n, "import") {
+                      print("import");
+                } else if isPresent(n, "topFunction") {
+                    print("function");
+                }
+
+            });
     });
+
+
 }
 
-fn generateNode(src: string, tokens: List<Token>) -> Node {
+fn generateNode(src: string, tokens: List<Token>, rules: RuleSet) -> Node {
     let list: List<TokenRecord> = newList<TokenRecord>();
 
     let lineCount: Ref<number> = Ref(0);
@@ -59,16 +68,13 @@ fn generateNode(src: string, tokens: List<Token>) -> Node {
         addAll(list,result);
     });
 
-   let filtered: List<TokenRecord> = filter(list, fn (token: TokenRecord) -> bool {
-          if token.token.alias == "#comment" return false;
-          else if token.token.alias == "#whitespace" return false;
-          else return true;
-   });
-   forEach(filtered, fn (tokenSub: TokenRecord) -> void {
-       print("Data: "+ tokenSub.data);
-   });
-
-    throw AssertError("ERROR");
+    let filtered: List<TokenRecord> = filter(list, fn (token: TokenRecord) -> bool {
+         if token.token.alias == "#comment" return false;
+         else if token.token.alias == "#whitespace" return false;
+         else return true;
+    });
+    let node: Node = reverseRule(rules,"entry",filtered);
+    return node;
 }
 
 fn forFile(file: string, list: List<string>) {
@@ -107,7 +113,6 @@ fn genTokenList() -> List<Token> {
     let A_mul: Token = genToken("*", "\\*", "(\\*)");
     let A_div: Token = genToken("/", "\\/", "(\\/)");
     let A_greater: Token = genToken("<", "<", "(<)");
-    let A_string: Token = genToken("string","\"", "");
     let A_smaller: Token = genToken(">", ">", "(>)");
     let A_function: Token = genToken("fn", "fn\\b", "(fn|f)");
     let A_list: Token = genToken("lst", "lst\\b", "(l|ls|lst)");
@@ -159,7 +164,6 @@ fn genTokenList() -> List<Token> {
     insert(list, A_mul);
     insert(list, A_div);
     insert(list, A_greater);
-    insert(list, A_string);
     insert(list, A_smaller);
     insert(list, A_function);
     insert(list, A_list);
