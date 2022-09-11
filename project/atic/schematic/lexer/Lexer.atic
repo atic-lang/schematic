@@ -14,4 +14,83 @@ fn reverseRule(ruleSet: RuleSet, entry: String, records: List<TokenRecord>) -> N
 
     }
 }
+fn testRule(Rule: rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
+    let list = rule.sentences;
+    let i: number = 0;
+    let s: number = list.size;
+    while i < s {
+        let sentence: Sentence = getAt(list,i);
+        let index = stream.index;
+        if testSentence(sentence,stream) matches Some(node) {
+            node.name = rule.name;
+            node.data = current(stream);
 
+            return Optional.Some(node);
+        } else matches None() {
+            stream.index = index;
+        }
+        i = i + 1;
+    }
+    return Optional.None<Node>();
+}
+
+
+fn testSentence(sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optional<Node> {
+    let nodes = newList<Node>();
+    let list = sentence.entries;
+    let i: number = 0;
+    let s: number = list.size;
+
+    while i < s {
+        let entry: Entry = getAt(list,i);
+
+        if !hasEntriesLeft(stream) {
+            return Optional.None<Node>();
+        }
+
+        if entry.literal != "" {
+             let record: TokenRecord = current(stream);
+
+             if(entry.literal == record.token.alias) {
+                if !entry.isHidden {
+                    //nodes.add(this.genLeaf(token));
+                    let node: Node =  Node(record,"",true,newList<Node>());
+                    insert(nodes,node);
+                }
+                consume(stream);
+             } else {
+                if entry.isConcrete {
+                    throw FailedCapture(rule,record);
+                }
+                return Optional.None<Node>();
+             }
+        } else if entry.rule matches Some(rule) {
+            let option: Optional<Node> = testRule(rule,stream);
+            if option matches None() {
+                if entry.isConcrete {
+                    let record: TokenRecord = current(stream);
+                    throw FailedCapture(rule,record);
+                }
+
+                return Optional.None<Node>();
+            } else matches Some(node) {
+                insert(nodes,node);
+            }
+
+        }
+
+
+        i = i + 1;
+    }
+
+    let placeholder: TokenRecord = current(stream);
+    return Optional.Some(Node(placeholder,"",false,nodes));
+}
+
+exception struct FailedCapture {
+    rule: Rule;
+    record: TokenRecord;
+
+
+
+}

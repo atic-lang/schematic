@@ -16,9 +16,14 @@ native struct Set<T> {
     size: number;
 }
 
+native struct Stack<T> {
+    size: number;
+}
+
 native struct Map<K,V> {
 
 }
+
 
 struct Ref<T> {
     value: T;
@@ -88,6 +93,9 @@ native fn <T> newList() -> List<T> {}
 native fn <K,V> newMap() -> Map<K,V> {}
 native fn <T> addAll(list: List<T>, elements: List<T>) {}
 
+native fn <T> peek(list: Stack<T>) -> T {}
+native fn <T> pop(list: Stack<T>) -> T {}
+native fn <T> push(list: Stack<T>, element: T) {}
 
 native fn <K,V> get(map: Map<K,V>, key: K) -> Optional<V> {}
 native fn <K,V> put(map: Map<K,V>, key: K, value: V) {}
