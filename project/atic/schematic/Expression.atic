@@ -2,6 +2,7 @@ use atic.schematic.Member;
 use atic.schematic.type.Type;
 use atic.schematic.Context;
 use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.Node;
 use atic.schematic.Atic;
 
 enum Expression {
@@ -43,6 +44,34 @@ struct Complex {
 }
 
 
+fn exprFromNode(node: Node, context: Context) -> Expression {
+    assertType(node,"expression");
+    if isPresent(node, "boolArithmetic") {
+        let boolExpr = boolFromNode(getNode(node,"boolArithmetic"),context);
+        return Expression.Bool(boolExpr);
+    }
+    throw AssertError("not impl for complex");
+}
+
+fn boolFromNode(node: Node, context: Context) -> BoolExpression {
+    assertType(node,"boolArithmetic");
+    let left = getNode(node,"comparisonArithmetic");
+    let expression = compFromTree(left, context);
+    let right = getNode(node,"boolRight");
+
+    if isPresent(right, "boolArithmeticFunc") {
+        let function = getNode(right,"boolArithmeticFunc");
+        let rightElement = boolFromNode(getNode(right, "boolArithmetic"), context);
+        return BoolExpression.Implemented(expression, OperatorFromTree(function), rightElement);
+    } else {
+        return BoolExpression.Normal(expression);
+    }
+}
+
+fn compFromTree(node: Node, context: Context) -> ComparisonExpression {
+    throw AssertError("Comparison not impl");
+}
+
 fn factorType(factor: Factor, context: Context) -> Result<Type,AticError> {
 
    // match factor {
@@ -75,4 +104,36 @@ enum Operator {
     SmallerEq();
     Equals();
     NonEquals();
+}
+
+fn OperatorFromTree(node: Node) -> Operator {
+    let name = child(node).record.data;
+    if name == "+" {
+        return Operator.Add();
+    } else if name == "-" {
+        return Operator.Subtract();
+    } else if name == "*" {
+        return Operator.Multiply();
+    } else if name == "/" {
+        return Operator.Divide();
+    } else if name == "||" {
+        return Operator.Or();
+    } else if name == "&&" {
+        return Operator.And();
+    } else if name == ">=" {
+        return Operator.GreaterEq();
+    } else if name == ">" {
+        return Operator.Greater();
+    } else if name == "<=" {
+        return Operator.SmallerEq();
+    } else if name == "<" {
+        return Operator.Smaller();
+    } else if name == "==" {
+        return Operator.Equals();
+    } else if name == "!=" {
+        return Operator.NonEquals();
+    } else {
+        throw NotFoundMsgError("cant find " + name + " to match");
+    }
+
 }

@@ -3,12 +3,13 @@ use atic.schematic.Context;
 use atic.schematic.tokens.Tokenizer;
 use atic.schematic.tokens.Node;
 use atic.schematic.Atic;
+use atic.schematic.type.StaticTypes;
 
 enum PathEntry {
     Function();
     Enum();
     Global();
-    Interface();
+    Interface(Struct);
 }
 
 struct Project {
@@ -40,4 +41,5 @@ struct Unit {
     path: Path;
     src: string;
     node: Optional<Node>;
+    environment: Optional<Environment>;
 }

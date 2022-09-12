@@ -53,6 +53,9 @@ fn walkList(leaf: string, list: string,node: Node, collection: List<Node>) {
 }
 
 fn child(this: Node) -> Node {
+    if this.children.size != 1 {
+        throw AssertError("Unexpected Size " + toString(this.children.size));
+    }
     return getAt(this.children,0);
 }
 

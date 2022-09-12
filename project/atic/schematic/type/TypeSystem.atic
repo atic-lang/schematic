@@ -33,6 +33,11 @@ fn test(a_: Type,b_: Type, query: MatchQuery) -> bool {
                 return true;
             } else return false;
         }
+        Primitive(typeA) -> {
+             if b matches Primitive(typeB) {
+                 return true;
+             } else return false;
+        }
     }
 
 }

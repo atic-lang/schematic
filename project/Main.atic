@@ -3,8 +3,11 @@ use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.tokens.Node;
 use atic.schematic.tokens.Tokenizer;
+use atic.schematic.type.StaticTypes;
+use atic.schematic.type.Type;
 use atic.schematic.lexer.GrammarReader;
 use atic.schematic.lexer.Lexer;
+use atic.schematic.Context;
 
 
 fn Main() {
@@ -25,10 +28,11 @@ fn compileProject(project: Project, rules: RuleSet) {
 
     let units: List<Unit> = newList<Unit>();
     forEach(files, fn (ref: string) -> void {
+        project;
         if containsArray(project.extensions, getExtension(ref)) {
             let src: string = loadFile(ref);
-            let path: Path = newPath("path");
-            let unit: Unit = Unit(path,src, Optional.None<Node>());
+            let path: Path = pathFromFiles(ref, project.file);
+            let unit: Unit = Unit(path,src, Optional.None<Node>(), Optional.None<Environment>());
             insert(units, unit);
         } else {
             print("Dont include " + ref);
@@ -40,22 +44,32 @@ fn compileProject(project: Project, rules: RuleSet) {
     forEach(units, fn (ref: Unit) -> void {
            let node: Node = generateNode(ref.src, tokenList, rules);
            ref.node = Optional.Some(node);
+           let environment = Environment(ref.path, project, newList<Path>());
+           ref.environment = Optional.Some(environment);
 
-            let list: List<Node> = walk("top", "topList", node);
-            forEach(list, fn (n: Node) -> void {
-                if isPresent(n, "struct") {
-                    print("struct");
+           let list: List<Node> = walk("top", "topList", node);
+           forEach(list, fn (n: Node) -> void {
+               if isPresent(n, "struct") {
                     let struct_ = getNode(n,"struct");
-                } else if isPresent(n, "import") {
-                      print("import");
-                } else if isPresent(n, "topFunction") {
+                    let name = id(struct_);
+                    let path = pathAddStr(environment.path, name);
+                    let structObj = Struct(
+                        path,
+                        genericsFromNode(getNode(struct_, "genericsOptional")),
+                        propertiesFromNode(getNode(struct_, "properties")),
+                        newMap<string,Type>()
+                    );
+                    put(project.entries, path, PathEntry.Interface(structObj));
+                    print("struct " + path.path);
+               } else if isPresent(n, "import") {
+                    let import_ = getNode(n,"import");
+                    let path = newPathNode(getNode(import_,"nChain"));
+                    insert(environment.imports,path);
+               } else if isPresent(n, "topFunction") {
                     print("function");
-                }
-
-            });
+               }
+           });
     });
-
-
 }
 
 fn generateNode(src: string, tokens: List<Token>, rules: RuleSet) -> Node {

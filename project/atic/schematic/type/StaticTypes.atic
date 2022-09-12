@@ -1,6 +1,7 @@
 use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.type.Type;
+use atic.schematic.tokens.Node;
 
 struct Enum {
     path: Path;
@@ -26,10 +27,69 @@ struct StaticFunction {
 
 
 struct Generics {
+    types: List<GenericType>;
+}
 
+fn genericsFromNode(node: Node) -> Generics {
+    assertType(node,"genericsOptional");
+    let list = newList<GenericType>();
+    if isPresent(node,"generics") {
+        let generics = getNode(node,"generics");
+        let counter = Ref(0);
+        forEach(walk("id", "idList", generics), fn (generic: Node) -> void  {
+            let name = id(generic);
+
+            if doesContainName__(list,name) {
+                throw AssertError("collision with " + name);
+            }
+            insert(list,GenericType(counter.value, name));
+            counter.value = counter.value + 1;
+        });
+    }
+    return Generics(list);
+}
+
+fn doesContainName__(list: List<GenericType>, name: string) -> bool {
+   let match_ = doesMatchAny(list, fn (type: GenericType) -> bool {
+        if type.name == name {
+            return true;
+        }
+        return false;
+   });
+   return match_;
 }
 
 struct Properties {
-
+    isNative: bool;
+    isStrict: bool;
+    isAsync: bool;
+    isException: bool;
 }
-
+fn propertiesFromNode(node: Node) -> Properties {
+    assertType(node,"properties");
+    let property = Properties(false,false,false,false);
+    forEach(walk("property", "properties", node), fn (ref: Node) -> void  {
+          if isPresent(ref,"native") {
+              if property.isNative {
+                 throw AssertError("Duplication of \"native\" ");
+              }
+              property.isNative = true;
+          } else if isPresent(ref,"strict") {
+               if property.isStrict {
+                  throw AssertError("Duplication of \"strict\" ");
+               }
+               property.isStrict = true;
+          } else if isPresent(ref,"async") {
+               if property.isAsync {
+                  throw AssertError("Duplication of \"async\" ");
+               }
+               property.isAsync = true;
+          } else if isPresent(ref,"exception") {
+               if property.isException {
+                   throw AssertError("Duplication of \"exception\" ");
+               }
+               property.isException = true;
+          }
+    });
+    return property;
+}

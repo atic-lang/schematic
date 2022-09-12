@@ -87,6 +87,23 @@ fn <T,S> findAny(list: List<T>, predicate: fn(T) -> Optional<S>) -> Optional<S> 
     return Optional.None<S>();
 }
 
+fn <T> doesMatchAny(list: List<T>, predicate: fn(T) -> bool) -> bool {
+    let newLst: List<T> = newList<T>();
+
+    let i: number = 0;
+    let s: number = list.size;
+
+    while i < s {
+        let element: T = getAt(list,i);
+        if predicate(element)  {
+            return true;
+        }
+        i = i + 1;
+    }
+
+    return false;
+}
+
 native fn <T> print(o: T) {}
 native fn <T> insert(list: List<T>, element: T) {}
 native fn <T> newList() -> List<T> {}
@@ -108,6 +125,9 @@ native fn isDirectory(file: string) -> bool {}
 native fn listFiles(file: string) -> List<string> {}
 native fn loadFile(file: string) -> string {}
 native fn getExtension(file: string) -> string {}
+native fn absFile(file: string) -> string {}
+native fn replace(str: string, target: string, replacement: string) -> string {}
+native fn removeExtension(file: string) -> string {}
 native fn regexTest(text: string, regex: string) -> bool {}
 native fn <T> toString(object: T) -> string {}
 native fn length(text: string) -> number {}

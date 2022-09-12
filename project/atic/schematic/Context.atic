@@ -44,6 +44,7 @@ fn askForGlobal(context: Context, path: Path) -> Optional<PathEntry> {
 struct Environment {
     path: Path;
     project: Project;
+    imports: List<Path>;
 }
 
 struct Variable {

@@ -3,6 +3,7 @@ use atic.schematic.Context;
 use atic.schematic.Member;
 use atic.schematic.Atic;
 use atic.schematic.tokens.Node;
+use atic.schematic.type.Type;
 
 enum Statement {
     Block(BlockStatement);
@@ -30,8 +31,8 @@ struct BranchStatement {
 }
 
 struct DeclarationStatement {
-    expression: Expression;
     variable: Variable;
+    expression: Expression;
 }
 
 struct MatchStatement {
@@ -58,9 +59,9 @@ fn fromAST(node: Node, context: Context) -> Statement {
     let name = child_.name;
 
     if name == "blockStatement" {
-        return Statement.Block(blockStatement(child_,context));
+        return Statement.Block(blockFromTree(child_,context));
     } else if name == "definitionStatement" {
-        return Statement.Declaration(definitionStatement(child_,context));
+        return Statement.Declaration(definitionFromTree(child_,context));
     }
 
 
@@ -68,13 +69,31 @@ fn fromAST(node: Node, context: Context) -> Statement {
 
 }
 
-fn definitionStatement(node: Node, context: Context) -> DeclarationStatement {
+fn definitionFromTree(node: Node, context: Context) -> DeclarationStatement {
+    assertType(node, "definitionStatement");
+    let type = getNode(node, "typeOfDefinition");
+    let typeName = child(type).record.data;
+    let isConst: bool = typeName == "const";
 
+    let nameOfDef = id(node);
+    let expr: Expression = exprFromNode(getNode(node, "expression"),context);
 
-    throw NotImplError();
+    let defType: Node = getNode(node,"typeOfVar");
+    if isPresent(defType, "type") {
+        let typeNode = getNode(defType, "type");
+        //TODO validate
+    } else {
+        //TODO infer
+    }
+
+    let variable: Variable = Variable(nameOfDef, Type.Primitive("test"), Location.Local(), Modifier.Variable());
+    if isConst {
+        variable.modifier = Modifier.Final();
+    }
+    return DeclarationStatement(variable, expr);
 }
 
-fn blockStatement(node: Node, context: Context) -> BlockStatement {
+fn blockFromTree(node: Node, context: Context) -> BlockStatement {
 
 
     throw NotImplError();

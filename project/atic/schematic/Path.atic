@@ -1,4 +1,5 @@
 use atic.schematic.Atic;
+use atic.schematic.tokens.Node;
 
 struct Path {
     path: string
@@ -10,4 +11,30 @@ fn newPath(file: string) -> Path {
 
 fn pathAdd(path: Path, pathB: Path) -> Path {
     return Path(path.path + "." + pathB.path);
+}
+
+fn pathFromFiles(file: string, parent: string) -> Path {
+    let absFile_ = absFile(file);
+    let absParent_ = absFile(parent);
+    let filePath = removeExtension(substring(absFile_,length(absParent_) + 1 ));
+    filePath = replace(filePath,"\\", ".");
+    filePath = replace(filePath,"/", ".");
+    return Path(filePath);
+}
+
+fn pathAddStr(path: Path, pathB: string) -> Path {
+    return Path(path.path + "." + pathB);
+}
+
+fn newPathNode(node: Node) -> Path {
+    assertType(node,"nChain");
+    let start = id(node);
+    let ref = Ref(start);
+
+    let typeList = walk("id", "typeChain", getNode(node,"typeChain"))
+    forEach(typeList, fn (element: Node) -> void {
+        ref.value = ref.value + "." + id(element);
+    });
+
+    return Path(ref.value);
 }
