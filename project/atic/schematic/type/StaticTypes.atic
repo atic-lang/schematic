@@ -2,6 +2,7 @@ use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.type.Type;
 use atic.schematic.tokens.Node;
+use atic.schematic.Statement;
 
 struct Enum {
     path: Path;
@@ -21,6 +22,7 @@ struct StaticFunction {
     path: Path;
     generics: Generics;
     properties: Properties;
+    statement: Optional<Statement>;
     inputs: List<Type>;
     output: Type;
 }

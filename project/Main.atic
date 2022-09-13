@@ -8,6 +8,7 @@ use atic.schematic.type.Type;
 use atic.schematic.lexer.GrammarReader;
 use atic.schematic.lexer.Lexer;
 use atic.schematic.Context;
+use atic.schematic.Statement;
 
 
 fn Main() {
@@ -32,7 +33,15 @@ fn compileProject(project: Project, rules: RuleSet) {
         if containsArray(project.extensions, getExtension(ref)) {
             let src: string = loadFile(ref);
             let path: Path = pathFromFiles(ref, project.file);
-            let unit: Unit = Unit(path,src, Optional.None<Node>(), Optional.None<Environment>());
+            let unit: Unit = Unit(
+                path,
+                src,
+                Optional.None<Node>(),
+                Optional.None<Environment>(),
+                newMap<Struct,Node>(),
+                newMap<StaticFunction,Node>()
+            );
+
             insert(units, unit);
         } else {
             print("Dont include " + ref);
@@ -42,34 +51,103 @@ fn compileProject(project: Project, rules: RuleSet) {
     let tokenList: List<Token> = genTokenList();
 
     forEach(units, fn (ref: Unit) -> void {
-           let node: Node = generateNode(ref.src, tokenList, rules);
-           ref.node = Optional.Some(node);
-           let environment = Environment(ref.path, project, newList<Path>());
-           ref.environment = Optional.Some(environment);
-
-           let list: List<Node> = walk("top", "topList", node);
-           forEach(list, fn (n: Node) -> void {
-               if isPresent(n, "struct") {
-                    let struct_ = getNode(n,"struct");
-                    let name = id(struct_);
-                    let path = pathAddStr(environment.path, name);
-                    let structObj = Struct(
-                        path,
-                        genericsFromNode(getNode(struct_, "genericsOptional")),
-                        propertiesFromNode(getNode(struct_, "properties")),
-                        newMap<string,Type>()
-                    );
-                    put(project.entries, path, PathEntry.Interface(structObj));
-                    print("struct " + path.path);
-               } else if isPresent(n, "import") {
-                    let import_ = getNode(n,"import");
-                    let path = newPathNode(getNode(import_,"nChain"));
-                    insert(environment.imports,path);
-               } else if isPresent(n, "topFunction") {
-                    print("function");
-               }
-           });
+        lexUnit(project, ref, tokenList, rules);
     });
+
+    forEach(units, fn (ref: Unit) -> void {
+        resolveMembers(project, ref);
+    });
+
+    forEach(units, fn (ref: Unit) -> void {
+        resolveFunctionHead(project, ref);
+    });
+
+    forEach(units, fn (ref: Unit) -> void {
+       resolveFunctionBody(project, ref);
+    });
+
+    forEach(units, fn (ref: Unit) -> void {
+        forEachBI(ref.interfaces, fn (struct_: Struct, node: Node) -> void {
+            print(struct_.path.path);
+            forEachBI(struct_.members, fn (name: string, type: Type) -> void {
+                print("> "+ name);
+            });
+        });
+    });
+}
+
+fn lexUnit(project: Project, unit: Unit, tokenList: List<Token>, rules: RuleSet) {
+    let node: Node = generateNode(unit.src, tokenList, rules);
+    unit.node = Optional.Some(node);
+    let environment = Environment(unit.path, project, newList<Path>());
+    unit.environment = Optional.Some(environment);
+
+    let list: List<Node> = walk("top", "topList", node);
+    forEach(list, fn (n: Node) -> void {
+        if isPresent(n, "struct") {
+             let struct_ = getNode(n,"struct");
+             let name = id(struct_);
+             let path = pathAddStr(environment.path, name);
+             let structObj = Struct(
+                 path,
+                 genericsFromNode(getNode(struct_, "genericsOptional")),
+                 propertiesFromNode(getNode(struct_, "properties")),
+                 newMap<string,Type>()
+             );
+             put(project.entries, path, PathEntry.Interface(structObj));
+             put(unit.interfaces, structObj, struct_);
+        } else if isPresent(n, "import") {
+             let import_ = getNode(n, "import");
+             let path = newPathNode(getNode(import_, "nChain"));
+             insert(environment.imports,path);
+        }
+    });
+}
+
+fn resolveMembers(project: Project, unit: Unit) {
+    forEachBI(unit.interfaces, fn (struct_: Struct, node: Node) -> void {
+        let map: Map<string,Type> = struct_.members;
+        let definitions = getNode(node, "structDefinitionList")
+        forEach(walk("structDefinition", "structDefinitionList", definitions), fn (sNode: Node) -> void {
+            let name: string = id(sNode);
+            let typeNode: Node = getNode(sNode,"type");
+            put(map, name, Type.Primitive("Test 2"))
+        });
+    });
+}
+
+fn resolveFunctionHead(project: Project, unit: Unit) {
+    if unit.node matches Some(node) {
+
+     let list: List<Node> = walk("top", "topList", node);
+     forEach(list, fn (n: Node) -> void {
+         if isPresent(n, "topFunction") {
+            let functionNode = getNode(n,"topFunction");
+
+            let name = id(functionNode);
+            let generics = genericsFromNode(getNode(functionNode, "genericsOptional"));
+            let properties = propertiesFromNode(getNode(functionNode, "properties"));
+            let path = pathAddStr(unit.path, name);
+            let staticFunction: StaticFunction = StaticFunction(
+                                                    path,
+                                                    generics,
+                                                    properties,
+                                                    Optional.None<Statement>(),
+                                                    newList<Type>(),
+                                                    Type.Primitive("Test3 ")
+                                                  );
+            print(staticFunction.path.path);
+            put(unit.functions, staticFunction, functionNode);
+         }
+     });
+    }
+}
+
+
+fn resolveFunctionBody(project: Project, unit: Unit) {
+     forEachBI(unit.functions, fn (struct_: StaticFunction, node: Node) -> void {
+
+     });
 }
 
 fn generateNode(src: string, tokens: List<Token>, rules: RuleSet) -> Node {

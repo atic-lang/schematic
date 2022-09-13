@@ -42,4 +42,7 @@ struct Unit {
     src: string;
     node: Optional<Node>;
     environment: Optional<Environment>;
+    interfaces: Map<Struct, Node>;
+    functions: Map<StaticFunction, Node>;
+    //functions:
 }

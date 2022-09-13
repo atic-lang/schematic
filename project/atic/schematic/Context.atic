@@ -21,7 +21,7 @@ struct Context {
     returnType: Type;
 }
 
-fn ContextCopy(context: Context) -> Context {
+fn contextCopy(context: Context) -> Context {
     let list: List<Variable> = newList<Variable>();
     addAll(list,context.variables);
     return Context(
@@ -31,6 +31,18 @@ fn ContextCopy(context: Context) -> Context {
     );
 }
 
+fn addVariable(context: Context, variable: Variable) {
+
+    let name = variable.name;
+    forEach(context.variables, fn (ref: Variable) -> void {
+        if ref.name == name  {
+            throw AssertError("duplicate name " + name);
+        }
+    });
+
+    insert(context.variables,variable);
+
+}
 
 fn askForLocal(context: Context, name: string) -> Optional<Variable> {
     return Optional.None<Variable>();

@@ -23,10 +23,25 @@ native struct Stack<T> {
 native struct Map<K,V> {
 
 }
+native struct BIEntry<K,V> {
+    key: K;
+    value: V;
+}
 
 
 struct Ref<T> {
     value: T;
+}
+
+fn <K,V> forEachBI(map: Map<K,V>,consumer: fn(K,V) -> void) {
+    let i: number = 0;
+    let list: List<BIEntry<K,V>> = getEntries(map);
+    let s: number = list.size;
+    while i < s {
+        let element: BIEntry<K,V> = getAt(list,i);
+        consumer(element.key, element.value);
+        i = i + 1;
+    }
 }
 
 fn <T> forEach(list: List<T>,consumer: fn(T) -> void) {
@@ -116,6 +131,7 @@ native fn <T> push(list: Stack<T>, element: T) {}
 
 native fn <K,V> get(map: Map<K,V>, key: K) -> Optional<V> {}
 native fn <K,V> put(map: Map<K,V>, key: K, value: V) {}
+native fn <K,V> getEntries(map: Map<K,V>) -> List<BIEntry<K,V>> {}
 native fn <T> getAt(map: List<T>, index: number) -> T {}
 native fn <T> contains(list: List<T>, element: T) -> bool {}
 native fn <T> containsArray(list: lst T, element: T) -> bool {}

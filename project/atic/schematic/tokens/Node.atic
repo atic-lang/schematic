@@ -12,7 +12,7 @@ fn getNode(this: Node, name: string) -> Node {
     let i: number = 0;
     while i < this.children.size {
         let child: Node = getAt(this.children,i);
-        if child.name == name {
+        if ignoreCase(child.name, name) {
             return child;
         }
 
@@ -26,7 +26,7 @@ fn isPresent(this: Node, name: string) -> bool {
     let i: number = 0;
     while i < this.children.size {
         let child: Node = getAt(this.children,i);
-        if child.name == name {
+        if ignoreCase(child.name, name) {
             return true;
         }
         i = i + 1;
@@ -60,13 +60,13 @@ fn child(this: Node) -> Node {
 }
 
 fn assertType(node: Node, name: string) {
-    if node.name != name {
+    if !ignoreCase(node.name, name) {
         throw AssertError("Unexpected Type " + name + " for type " + node.name);
     }
 }
 
 fn id(node: Node) -> string {
-    if node.name == "id" {
+    if ignoreCase(node.name, "id") {
         return child(node).record.data;
     } else {
         let id: Node = getNode(node,"id");

@@ -8,9 +8,11 @@ struct MatchQuery {
 }
 
 
-fn test(a_: Type,b_: Type, query: MatchQuery) -> bool {
+fn test(a_: Type, b_: Type, query: MatchQuery) -> bool {
     let a: Type = a_;
     let b: Type = b_;
+
+
 
     match a {
         Struct(typeA) -> {
