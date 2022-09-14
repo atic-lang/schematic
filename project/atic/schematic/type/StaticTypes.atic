@@ -51,6 +51,23 @@ fn genericsFromNode(node: Node) -> Generics {
     return Generics(list);
 }
 
+struct GenericsType {
+    types: List<Type>;
+}
+
+fn genericsTypeFromNode(node: Node) -> GenericsType {
+    assertType(node,"genericsOptionalType");
+    let list = newList<Type>();
+    if isPresent(node,"genericsType") {
+        let generics = getNode(node,"genericsType");
+        forEach(walk("type", "typeList", generics), fn (generic: Node) -> void  {
+            let type: Type = typeFromTree(generic,context);
+            insert(list,type);
+        });
+    }
+    return GenericsType(list);
+}
+
 fn doesContainName__(list: List<GenericType>, name: string) -> bool {
    let match_ = doesMatchAny(list, fn (type: GenericType) -> bool {
         if type.name == name {

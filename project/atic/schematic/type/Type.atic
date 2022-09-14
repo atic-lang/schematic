@@ -1,11 +1,12 @@
 use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.type.StaticTypes;
+use atic.schematic.tokens.Node;
 
 enum Type {
     Struct(StructImpl);
     Enum(EnumImpl);
-    Function(Function);
+    Function(FunctionType);
     Generic(GenericType);
     Primitive(string);
 }
@@ -21,9 +22,10 @@ struct EnumImpl {
     implementation: List<Type>
 }
 
-struct Function {
-    type: StaticFunction;
-    implementation: List<Type>;
+struct FunctionType {
+    inputs: List<Type>;
+    output: Type;
+    generics: Generics;
 }
 
 struct GenericType {
@@ -32,6 +34,36 @@ struct GenericType {
 }
 
 
+fn typeFromTree(node: Node, context: Context) -> Type {
+    assertType(node, "type");
+    let child = child(node);
+    let typeType = child.
+    if name == "classType"  {
+        let genericsType: GenericsType = genericsTypeFromNode(getNode(child, "genericsOptionalType"), context);
+        let path = newPathNode(getNode(child, "nChain"));
+
+
+    } else if name == "functionType" {
+        let list: List<Type> = typeListFromTree(getNode(child, "typeList"), context);
+        let returnType: Type = typeFromTree(getNode(child, "type"), context);
+        let generics: Generics = Generics(newList<GenericType>());
+        return Type.Function(FunctionType(list, returnType, generics));
+    } else if name = "arrayType" {
+          throw AssertError("arrays not impl ");
+    } else  {
+        throw AssertError("cant resolve type " + name);
+    }
+}
+
+fn typeListFromTree(node: Node, context: Context) -> List<Type> {
+    assertType(node, "typeList");
+    let list = newList<Type>();
+    forEach(walk("type", "typeList", node), fn (subNode: Node) -> void  {
+        let type: Type = typeFromTree(subNode,context);
+        insert(list,type);
+    });
+    return list;
+}
 
 
 

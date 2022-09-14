@@ -41,6 +41,10 @@ fn addVariable(context: Context, variable: Variable) {
     });
 
     insert(context.variables,variable);
+}
+
+fn askForStruct(context: Context, path: Path) -> Optional<Struct> {
+    let project: Project = context.environment.project;
 
 }
 
@@ -64,4 +68,33 @@ struct Variable {
     type: Type;
     location: Location;
     modifier: Modifier;
+}
+
+fn <T> searchViaPath(imports: List<Path>, master: Path, path: Path, map: ap<Path,T>) -> Optional<T> {
+
+    let f0: Optional<T> = get(map, path);
+    if f0 matches Some(t) {
+        return Optional.Some(t);
+    } else matches None() {
+        let f1: Optional<T> = get(map, pathAdd(master, path));
+        if f1 matches Some(t) {
+             return Optional.Some(t);
+        } else {
+            let i: number = 0;
+            let s: number = imports.size;
+
+            while i < s {
+                let root: Path = getAt(list,i);
+                let f2: Optional<T> = get(map, pathAdd(root, path));
+                if f2 matches Some(t) {
+                    return Optional.Some(t);
+                }
+                i = i + 1;
+            }
+            return Optional.None<T>();
+        }
+
+
+    }
+
 }
