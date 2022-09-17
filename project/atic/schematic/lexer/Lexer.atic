@@ -16,7 +16,6 @@ fn reverseRule(ruleSet: RuleSet, entry: string, records: List<TokenRecord>) -> N
         if hasEntriesLeft(stream) {
             while hasEntriesLeft(stream) {
                 let c = current(stream);
-                print(c);
                 consume(stream);
             }
             throw AssertError("steam has entries left");

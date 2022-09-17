@@ -156,10 +156,6 @@ fn findByName(list: List<Rule>, name: string) -> Rule {
          i = i + 1;
      }
 
-     forEach(list, fn (ru: Rule) -> void {
-        print(ru.name);
-     });
-
     throw NotFoundMsgError("cant find " + name);
 }
 

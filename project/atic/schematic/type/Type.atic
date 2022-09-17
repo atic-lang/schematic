@@ -2,6 +2,7 @@ use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.type.StaticTypes;
 use atic.schematic.tokens.Node;
+use atic.schematic.Context;
 
 enum Type {
     Struct(StructImpl);
@@ -37,18 +38,40 @@ struct GenericType {
 fn typeFromTree(node: Node, context: Context) -> Type {
     assertType(node, "type");
     let child = child(node);
-    let typeType = child.
+    let name = child.name;
     if name == "classType"  {
         let genericsType: GenericsType = genericsTypeFromNode(getNode(child, "genericsOptionalType"), context);
         let path = newPathNode(getNode(child, "nChain"));
-
-
+        if path.path == "void" {
+            return Type.Primitive("void");
+        } else if path.path == "number" {
+            return Type.Primitive("number");
+        } else if path.path == "bool" {
+            return Type.Primitive("bool");
+        }
+        let genericResult = askForGeneric(context, path);
+        if genericResult matches Some(generic) {
+            return Type.Generic(generic);
+        } else {
+            let result = askFor(context, path);
+            if result matches None() {
+                  throw AssertError("cant find anything for " + path.path);
+            } else matches Some(search) {
+                if search matches Interface(struct_) {
+                    return Type.Struct(StructImpl(struct_, genericsType.types));
+                } else if search matches Enum(enum_) {
+                    return Type.Enum(EnumImpl(enum_, genericsType.types));
+                } else {
+                    throw AssertError("Path " + path.path + " cant be resolved to a type");
+                }
+            }
+        }
     } else if name == "functionType" {
         let list: List<Type> = typeListFromTree(getNode(child, "typeList"), context);
         let returnType: Type = typeFromTree(getNode(child, "type"), context);
         let generics: Generics = Generics(newList<GenericType>());
         return Type.Function(FunctionType(list, returnType, generics));
-    } else if name = "arrayType" {
+    } else if name == "arrayType" {
           throw AssertError("arrays not impl ");
     } else  {
         throw AssertError("cant resolve type " + name);

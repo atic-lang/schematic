@@ -7,29 +7,27 @@ use atic.schematic.type.StaticTypes;
 
 enum PathEntry {
     Function();
-    Enum();
+    Enum(Enum);
     Global();
     Interface(Struct);
 }
 
 struct Project {
-    entries: Map<Path,PathEntry>;
+    entries: Map<string,PathEntry>;
     file: string;
     units: List<Unit>;
     extensions: lst string;
 }
 
-
-
-fn getEntry(environment: Environment, path: Path, ) -> Optional<PathEntry> {
-    let main: Optional<PathEntry> = get(environment.project.entries,path);
+fn getEntry(environment: Environment, path: Path) -> Optional<PathEntry> {
+    let main: Optional<PathEntry> = get(environment.project.entries, path.path);
     if main matches Some(entry) {
         return Optional.Some<PathEntry>(entry);
     } else {
-        let spath: Path = pathAdd(environment.path,path);
-        let other: Optional<PathEntry> = get(environment.project.entries,spath);
+        let spath: Path = pathAdd(environment.path, path);
+        let other: Optional<PathEntry> = get(environment.project.entries, spath.path);
         if other matches Some(entry) {
-           return Optional.Some<PathEntry>(entry);
+            return Optional.Some<PathEntry>(entry);
         } else {
             return Optional.None<PathEntry>();
         }

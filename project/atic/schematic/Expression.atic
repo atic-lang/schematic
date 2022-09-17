@@ -69,7 +69,59 @@ fn boolFromNode(node: Node, context: Context) -> BoolExpression {
 }
 
 fn compFromTree(node: Node, context: Context) -> ComparisonExpression {
-    throw AssertError("Comparison not impl");
+    assertType(node,"comparisonArithmetic");
+    let left = getNode(node,"arithmetic");
+    let expression = arithmeticFromNode(left, context);
+    let right = getNode(node,"comparisonRight");
+
+    if isPresent(right, "comparisonArithmeticFunc") {
+        let function = getNode(right,"comparisonArithmeticFunc");
+        let rightElement = compFromTree(getNode(right, "comparisonArithmetic"), context);
+        return ComparisonExpression.Implemented(expression, OperatorFromTree(function), rightElement);
+    } else {
+        return ComparisonExpression.Normal(expression);
+    }
+}
+
+fn arithmeticFromNode(node: Node, context: Context) -> ArithmeticExpression {
+    assertType(node,"arithmetic");
+    let left = getNode(node,"term");
+    let expression = termFromTree(left, context);
+    let right = getNode(node,"arithmeticRight");
+
+    if isPresent(right, "arithmeticFunc") {
+        let function = getNode(right,"arithmeticFunc");
+        let rightElement = arithmeticFromNode(getNode(right, "arithmetic"), context);
+        return ArithmeticExpression.Implemented(expression, OperatorFromTree(function), rightElement);
+    } else {
+        return ArithmeticExpression.Normal(expression);
+    }
+}
+
+fn termFromTree(node: Node, context: Context) -> Term {
+    assertType(node,"term");
+    let left = getNode(node,"factor");
+    let expression = factorFromTree(left, context);
+    let right = getNode(node,"termRight");
+
+    if isPresent(right, "termFunc") {
+        let function = getNode(right,"termFunc");
+        let rightElement = termFromTree(getNode(right, "term"), context);
+        return Term.Implemented(expression, OperatorFromTree(function), rightElement);
+    } else {
+        return Term.Normal(expression);
+    }
+}
+fn factorFromTree(node: Node, context: Context) -> Factor {
+    if isPresent(node, "number") {
+        return Factor.Number(0);
+    } else if isPresent(node, "boolArithmetic") {
+        let expr = getNode(node, "boolArithmetic");
+        return Factor.Expression(Expression.Bool(boolFromNode(expr, context)));
+    } else {
+        let typeN = child(node).name;
+        throw AssertError(typeN + " is not impl");
+    }
 }
 
 fn factorType(factor: Factor, context: Context) -> Result<Type,AticError> {

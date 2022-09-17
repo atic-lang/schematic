@@ -1,4 +1,5 @@
 use atic.schematic.type.Type;
+use atic.schematic.type.StaticTypes;
 use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.project.Project;
@@ -18,6 +19,7 @@ enum Modifier {
 struct Context {
     environment: Environment;
     variables: List<Variable>;
+    generics: Generics;
     returnType: Type;
 }
 
@@ -27,6 +29,7 @@ fn contextCopy(context: Context) -> Context {
     return Context(
         context.environment,
         list,
+        context.generics,
         context.returnType
     );
 }
@@ -43,9 +46,26 @@ fn addVariable(context: Context, variable: Variable) {
     insert(context.variables,variable);
 }
 
-fn askForStruct(context: Context, path: Path) -> Optional<Struct> {
-    let project: Project = context.environment.project;
+fn askFor(context: Context, path: Path) -> Optional<PathEntry> {
+    let environment = context.environment;
+    let project: Project = environment.project;
+    let result = searchViaPath(environment.imports, environment.path, path, project.entries)
+    return result;
+}
 
+fn askForGeneric(context: Context, path: Path) -> Optional<GenericType> {
+    let list = context.generics.types;
+    let i: number = 0;
+    let s: number = list.size;
+
+    while i < s {
+        let element: GenericType = getAt(list,i);
+        if element.name == path.path {
+            return Optional.Some(element);
+        }
+        i = i + 1;
+    }
+    return Optional.None<GenericType>();
 }
 
 fn askForLocal(context: Context, name: string) -> Optional<Variable> {
@@ -70,13 +90,13 @@ struct Variable {
     modifier: Modifier;
 }
 
-fn <T> searchViaPath(imports: List<Path>, master: Path, path: Path, map: ap<Path,T>) -> Optional<T> {
-
-    let f0: Optional<T> = get(map, path);
+fn <T> searchViaPath(imports: List<Path>, master: Path, path: Path, map: Map<string,T>) -> Optional<T> {
+    let f0: Optional<T> = get(map, path.path);
     if f0 matches Some(t) {
         return Optional.Some(t);
     } else matches None() {
-        let f1: Optional<T> = get(map, pathAdd(master, path));
+        let p = pathAdd(master, path);
+        let f1: Optional<T> = get(map, p.path);
         if f1 matches Some(t) {
              return Optional.Some(t);
         } else {
@@ -84,8 +104,9 @@ fn <T> searchViaPath(imports: List<Path>, master: Path, path: Path, map: ap<Path
             let s: number = imports.size;
 
             while i < s {
-                let root: Path = getAt(list,i);
-                let f2: Optional<T> = get(map, pathAdd(root, path));
+                let root: Path = getAt(imports,i);
+                let p2 = pathAdd(root, path);
+                let f2: Optional<T> = get(map, p2.path);
                 if f2 matches Some(t) {
                     return Optional.Some(t);
                 }

@@ -3,6 +3,7 @@ use atic.schematic.Atic;
 use atic.schematic.type.Type;
 use atic.schematic.tokens.Node;
 use atic.schematic.Statement;
+use atic.schematic.Context;
 
 struct Enum {
     path: Path;
@@ -23,7 +24,7 @@ struct StaticFunction {
     generics: Generics;
     properties: Properties;
     statement: Optional<Statement>;
-    inputs: List<Type>;
+    inputs: List<Variable>;
     output: Type;
 }
 
@@ -40,7 +41,6 @@ fn genericsFromNode(node: Node) -> Generics {
         let counter = Ref(0);
         forEach(walk("id", "idList", generics), fn (generic: Node) -> void  {
             let name = id(generic);
-
             if doesContainName__(list,name) {
                 throw AssertError("collision with " + name);
             }
@@ -55,7 +55,7 @@ struct GenericsType {
     types: List<Type>;
 }
 
-fn genericsTypeFromNode(node: Node) -> GenericsType {
+fn genericsTypeFromNode(node: Node, context: Context) -> GenericsType {
     assertType(node,"genericsOptionalType");
     let list = newList<Type>();
     if isPresent(node,"genericsType") {
