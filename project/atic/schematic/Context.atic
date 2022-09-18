@@ -69,6 +69,17 @@ fn askForGeneric(context: Context, path: Path) -> Optional<GenericType> {
 }
 
 fn askForLocal(context: Context, name: string) -> Optional<Variable> {
+     let list = context.variables;
+     let i: number = 0;
+     let s: number = list.size;
+
+    while i < s {
+        let var: Variable = getAt(list,i);
+        if var.name == name {
+            return Optional.Some(var);
+        }
+        i = i + 1;
+    }
     return Optional.None<Variable>();
 }
 

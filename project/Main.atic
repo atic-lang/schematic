@@ -69,7 +69,7 @@ fn compileProject(project: Project, rules: RuleSet) {
     forEach(units, fn (ref: Unit) -> void {
         forEachBI(ref.interfaces, fn (struct_: Struct, node: Node) -> void {
             //print(struct_.path.path + ":");
-            forEachBI(struct_.members, fn (name: string, type: Type) -> void {
+            forEach(struct_.members, fn (entry: BIEntry<string, Type>) -> void {
                 //print(name);
             });
         });
@@ -92,7 +92,7 @@ fn lexUnit(project: Project, unit: Unit, tokenList: List<Token>, rules: RuleSet)
                  path,
                  genericsFromNode(getNode(struct_, "genericsOptional")),
                  propertiesFromNode(getNode(struct_, "properties")),
-                 newMap<string,Type>()
+                 newList<BIEntry<string,Type>>()
              );
              put(project.entries, path.path, PathEntry.Interface(structObj));
              put(unit.interfaces, structObj, struct_);
@@ -107,13 +107,14 @@ fn lexUnit(project: Project, unit: Unit, tokenList: List<Token>, rules: RuleSet)
 fn resolveMembers(project: Project, unit: Unit) {
     if unit.environment matches Some(environment) {
         forEachBI(unit.interfaces, fn (struct_: Struct, node: Node) -> void {
-            let map: Map<string,Type> = struct_.members;
+            let list: List<BIEntry<string,Type>> = struct_.members;
             let definitions = getNode(node, "structDefinitionList")
             let context = Context(environment, newList<Variable>(), struct_.generics,  Type.Primitive("void"));
             forEach(walk("structDefinition", "structDefinitionList", definitions), fn (sNode: Node) -> void {
                 let name: string = id(sNode);
                 let typeNode: Node = getNode(sNode,"type");
-                put(map, name, typeFromTree(typeNode, context))
+                let biEntry = BIEntry(name, typeFromTree(typeNode, context));
+                insert(list, biEntry);
             });
         });
     }
@@ -166,7 +167,7 @@ fn resolveFunctionBody(project: Project, unit: Unit) {
         forEachBI(unit.functions, fn (function: StaticFunction, node: Node) -> void {
             let list: List<Variable> = newList<Variable>();
             addAll(list,function.inputs);
-            let context = Context(environment, newList<Variable>(), function.generics, function.output);
+            let context = Context(environment, list, function.generics, function.output);
             let statement = blockFromTree(node, context);
         });
     }

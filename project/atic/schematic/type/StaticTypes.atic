@@ -16,7 +16,7 @@ struct Struct {
     path: Path;
     generics: Generics;
     properties: Properties;
-    members: Map<string,Type>;
+    members: List<BIEntry<string,Type>>;
 }
 
 struct StaticFunction {

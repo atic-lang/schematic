@@ -35,11 +35,6 @@ struct DeclarationStatement {
     expression: Expression;
 }
 
-struct MatchStatement {
-    defaultStatement:  Optional<Statement>;
-    expression: Expression;
-}
-
 struct ReturnStatement {
     expression: Optional<Expression>;
 }
@@ -64,12 +59,46 @@ fn statementFromNode(node: Node, context: Context) -> Statement {
         return Statement.Declaration(definitionFromTree(child_,context));
     } else if name == "returnStatement" {
          return Statement.Return(returnFromTree(child_,context));
+    } else if name == "branchStatement" {
+        return Statement.Branch(branchFromTree(child_, context));
+    } else if name == "whileStatement" {
+        return Statement.While(whileFromTree(child_, context));
+    } else if name == "assignStatement"  {
+        return Statement.Assign(assignFromTree(child_, context));
     }
 
 
     throw AssertError(name + " is not impl");
-
 }
+
+fn assignFromTree(node: Node, context: Context) -> AssignStatement {
+    assertType(node, "assignStatement");
+    let expr = exprFromNode(getNode(node, "expression"),context);
+    let member = memberFromTree(getNode(node, "member"),context);
+    return AssignStatement(expr, member);
+}
+
+fn branchFromTree(node: Node, context: Context) -> BranchStatement {
+    assertType(node, "branchStatement");
+    let expr = exprFromNode(getNode(node, "expression"),context);
+    let stmt = statementFromNode(getNode(node, "statement"), context);
+    let elseStmt = Statement.Block(BlockStatement(newList<Statement>()));
+    let elsePart = getNode(node, "elseBranch");
+    if isPresent(elsePart, "elseStatement") {
+        let elseBranch = getNode(elsePart, "elseStatement");
+        elseStmt = statementFromNode(getNode(elseBranch, "statement"), context);
+    }
+
+    return BranchStatement(expr, stmt, elseStmt);
+}
+
+fn whileFromTree(node: Node, context: Context) -> WhileStatement {
+    assertType(node, "whileStatement");
+    let expr = exprFromNode(getNode(node, "expression"),context);
+    let stmt = statementFromNode(getNode(node, "statement"), context);
+    return WhileStatement(expr, stmt);
+}
+
 fn returnFromTree(node: Node, context: Context) -> ReturnStatement {
     assertType(node, "returnStatement");
     let returnValue = getNode(node, "returnValue")

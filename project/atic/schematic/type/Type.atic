@@ -9,6 +9,7 @@ enum Type {
     Enum(EnumImpl);
     Function(FunctionType);
     Generic(GenericType);
+    Array(Type);
     Primitive(string);
 }
 
@@ -72,7 +73,7 @@ fn typeFromTree(node: Node, context: Context) -> Type {
         let generics: Generics = Generics(newList<GenericType>());
         return Type.Function(FunctionType(list, returnType, generics));
     } else if name == "arrayType" {
-          throw AssertError("arrays not impl ");
+        return Type.Array(typeFromTree(getNode(child, "type"), context));
     } else  {
         throw AssertError("cant resolve type " + name);
     }

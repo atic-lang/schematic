@@ -2,7 +2,9 @@ use atic.schematic.Path;
 use atic.schematic.Expression;
 use atic.schematic.Context;
 use atic.schematic.type.Type;
+use atic.schematic.type.StaticTypes;
 use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.Node;
 use atic.schematic.Atic;
 
 struct Member {
@@ -19,6 +21,93 @@ enum Access {
     Array(Type, Expression);
     Call(Type, List<Expression>);
     Member(Type, number);
+}
+
+fn memberFromTree(node: Node, context: Context) -> Member {
+    assertType(node, "member");
+    let startID: string = id(node);
+    let contextVar = askForLocal(context, startID);
+    if contextVar matches Some(variable) {
+        let compounds = newList<Access>();
+        let typeRef = Ref(variable.type);
+        if isPresent(node, "memberCompound") {
+            forEach(walk("varTerminal", "memberCompound", node) , fn (subNode: Node) -> void {
+                let subTerm: Node = child(subNode);
+                let subName = subTerm.name;
+                if subName == "memberAccess" {
+                    let inType: Type = typeRef.value;
+                    if inType matches Struct(structImpl) {
+                        //TODO implement generics
+                        let memberName: string = id(subTerm);
+                        let memberReference = Optional.None<Type>();
+                        let memberIndex = -1;
+                        let list = structImpl.type.members;
+                        let i: number = 0;
+                        let s: number = list.size;
+
+                        while i < s {
+                            let element: BIEntry<string,Type> = getAt(list,i);
+                            if element.key == memberName {
+                                memberReference = Optional.Some(element.value);
+                                memberIndex = i;
+                            }
+                            i = i + 1;
+                        }
+
+                        if memberReference matches None() {
+                            throw AssertError("cant find member " + memberName);
+                        } else matches Some(member) {
+                            let access = Access.Member(member, memberIndex);
+                            insert(compounds, access);
+                            typeRef.value = member;
+                        }
+
+                    } else {
+                        throw AssertError("cant access a member from a here");
+                    }
+                } else if subName == "callAccess" {
+
+                    let genericsType: GenericsType = genericsTypeFromNode(getNode(subTerm, "genericsOptionalType"), context);
+                    let exprList = newList<Expression>();
+                    forEach(walk("expression", "argList", subTerm), fn (subNode_: Node) -> void {
+                        let expr = exprFromNode(subNode_, context);
+                        insert(exprList, expr);
+                    });
+
+                    let inType: Type = typeRef.value;
+                    if inType matches Function(functionType) {
+                        if exprList.size != functionType.inputs.size {
+                            throw AssertError("incompatible arg size");
+                        }
+                        //TODO validate
+                        let output = functionType.output;
+                        let access = Access.Call(output, exprList);
+                        insert(compounds, access);
+                        typeRef.value = output;
+
+                    } else {
+                        throw AssertError("cant call a here");
+                    }
+                } else if subName == "arrayAccess" {
+                    let inType: Type = typeRef.value;
+                    if inType matches Array(subType) {
+                        let expr = exprFromNode(getNode(subTerm, "expression"), context);
+                        let access = Access.Array(subType, expr);
+                        insert(compounds, access);
+                        typeRef.value = subType;
+                    } else {
+                        throw AssertError("cant array access a here");
+                    }
+                }
+
+            });
+        }
+        return Member(MemberType.Local(variable), compounds);
+    } else {
+        throw AssertError("cant find " + startID);
+    }
+
+
 }
 
 fn MemberType(member: Member, context: Context) -> Result<Type,AticError> {

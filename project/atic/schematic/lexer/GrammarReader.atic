@@ -93,7 +93,7 @@ fn genRule(stream: TokenStream<TokenRecord>, callback:  fn (string, Entry) -> vo
 
 
             } else {
-                throw NotFoundMsgError("expected literal or keyword, but got " + toString(current(stream)));
+                throw NotFoundMsgError("expected literal or keyword");
             }
         }
         consume(stream);
