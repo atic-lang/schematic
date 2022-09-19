@@ -35,7 +35,7 @@ fn testRule(rule: Rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
     while i < s {
         let sentence: Sentence = getAt(list,i);
         let index = stream.index;
-        let result = testSentence(sentence,stream);
+        let result = testSentence(rule, sentence,stream);
         if result matches Some(nodeC) {
             nodeC.name = rule.name;
             if hasEntriesLeft(stream) {
@@ -51,7 +51,7 @@ fn testRule(rule: Rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
 }
 
 
-fn testSentence(sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optional<Node> {
+fn testSentence(masterRule: Rule, sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optional<Node> {
     let nodes = newList<Node>();
     let list = sentence.entries;
     let i: number = 0;
@@ -77,7 +77,7 @@ fn testSentence(sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optiona
              } else {
                 if entry.isConcrete {
                     throw FailedCapture(entry,record, "could not match keyword >" + entry.literal + "< to >" + record
-                    .token.alias + "<"  );
+                    .token.alias + "<" + " in rule " + masterRule.name   );
                 }
                 return Optional.None<Node>();
              }

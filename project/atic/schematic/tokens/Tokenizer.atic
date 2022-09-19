@@ -70,6 +70,38 @@ fn findToken(str: string, list: List<Token>) -> Optional<Token> {
 }
 
 fn genToken(alias: string, peek: string, capture: string) -> Token  {
+
+    if alias == "string" {
+        return Token(
+                alias,
+                fn (text: string) -> bool {
+                    return regexTest(text, "^" + peek);
+                },
+                fn (text_: string) -> bool {
+                    let waitFor = false;
+                    let i: number = 1;
+                    let s: number = length(text_);
+                    while i < s {
+                        let char: string = charAt(text_,i);
+                        if waitFor {
+                            waitFor = false;
+                        } else {
+                            if char == "\\" {
+                                waitFor = true;
+                            } else if char == "\"" {
+                                if i == s-2 {
+                                    return false;
+                                }
+                            }
+                        }
+                        i = i + 1;
+                    }
+                    return true;
+                }
+        );
+    }
+
+
     return Token(
         alias,
         fn (text: string) -> bool {

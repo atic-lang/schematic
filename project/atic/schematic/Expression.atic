@@ -36,6 +36,7 @@ enum Factor {
     BoolLiteral(bool);
     Not(Factor);
     NegUnary(Factor);
+    String(string);
     Member(Member);
 }
 
@@ -112,12 +113,37 @@ fn termFromTree(node: Node, context: Context) -> Term {
         return Term.Normal(expression);
     }
 }
+
 fn factorFromTree(node: Node, context: Context) -> Factor {
     if isPresent(node, "number") {
         return Factor.Number(0);
     } else if isPresent(node, "boolArithmetic") {
         let expr = getNode(node, "boolArithmetic");
         return Factor.Expression(Expression.Bool(boolFromNode(expr, context)));
+    } else if isPresent(node, "unary") {
+        let expr = getNode(node, "unary");
+        return Factor.NegUnary(factorFromTree(getNode(expr, "factor"), context));
+    } else if isPresent(node, "string") {
+        let expr = getNode(node, "string");
+        let str: string = child(expr).record.data;
+        let subStr = substring2(str, 1, length(str) - 1);
+        return Factor.String(subStr);
+    }  else if isPresent(node, "boolLiteral") {
+        let expr = getNode(node, "boolLiteral");
+        let str: string = child(expr).record.data;
+        let boolean = false;
+        if str == "true" {
+            boolean = true;
+        } else if str != "false" {
+            throw AssertError("cant resolve " + str);
+        }
+        return Factor.BoolLiteral(boolean);
+    } else if isPresent(node, "not") {
+        let expr = getNode(node, "not");
+        return Factor.Not(factorFromTree(getNode(expr, "factor"), context));
+    } else if isPresent(node, "member") {
+       let expr = getNode(node, "member");
+       return Factor.Member(memberFromTree(expr, context));
     } else {
         let typeN = child(node).name;
         throw AssertError(typeN + " is not impl");
