@@ -55,6 +55,8 @@ struct GenericsType {
     types: List<Type>;
 }
 
+
+
 fn genericsTypeFromNode(node: Node, context: Context) -> GenericsType {
     assertType(node,"genericsOptionalType");
     let list = newList<Type>();

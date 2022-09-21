@@ -67,19 +67,18 @@ fn testTypes(toMatch: Type, found: Type, query: MatchQuery) -> bool {
 }
 
 fn testTypeList(listA: List<Type>, listB: List<Type>, query: MatchQuery) -> bool {
-     if listA.size != listB.size {
-         return false;
-     }
-     let i: number = 0;
-     let s: number = listA.size;
-
-     while i < s {
-         let a: Type = getAt(listA,i);
-         let b: Type = getAt(listB,i);
-         if !testTypes(a, b, query) {
-             return false;
-         }
-         i = i + 1;
-     }
-     return true;
+    if listA.size != listB.size {
+        return false;
+    }
+    let i: number = 0;
+    let s: number = listA.size;
+    while i < s {
+        let a: Type = getAt(listA,i);
+        let b: Type = getAt(listB,i);
+        if !testTypes(a, b, query) {
+            return false;
+        }
+        i = i + 1;
+    }
+    return true;
 }

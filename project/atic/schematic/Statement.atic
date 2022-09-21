@@ -106,14 +106,16 @@ fn whileFromTree(node: Node, context: Context) -> WhileStatement {
 fn returnFromTree(node: Node, context: Context) -> ReturnStatement {
     assertType(node, "returnStatement");
     let returnValue = getNode(node, "returnValue")
+    let option = Optional.None<Expression>();
+    let returnType = Type.Primitive("void");
     if isPresent(returnValue, "expression") {
         let exprNode = getNode(returnValue, "expression");
         let expr = exprFromNode(exprNode,context);
-        //TODO validate
-        return ReturnStatement(Optional.Some(expr));
-    } else {
-        return ReturnStatement(Optional.None<Expression>());
+        option = Optional.Some(expr);
+        returnType = getExprType(expr);
     }
+    assertExprType(context.returnType, returnType, "return not compatible");
+    return ReturnStatement(option);
 }
 
 

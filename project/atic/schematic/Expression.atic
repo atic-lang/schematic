@@ -1,5 +1,6 @@
 use atic.schematic.Member;
 use atic.schematic.type.Type;
+use atic.schematic.type.TypeSystem;
 use atic.schematic.Context;
 use atic.schematic.tokens.Tokenizer;
 use atic.schematic.tokens.Node;
@@ -63,7 +64,13 @@ fn boolFromNode(node: Node, context: Context) -> BoolExpression {
     if isPresent(right, "boolArithmeticFunc") {
         let function = getNode(right,"boolArithmeticFunc");
         let rightElement = boolFromNode(getNode(right, "boolArithmetic"), context);
-        return BoolExpression.Implemented(expression, OperatorFromTree(function), rightElement);
+        let operator =  OperatorFromTree(function);
+        let leftType = getCompExprType(expression);
+        let rightType = getBoolExprType(rightElement);
+        assertExprType(Type.Primitive("bool"), leftType, "left side is not a boolean" + toString(operator));
+        assertExprType(Type.Primitive("bool"), rightType, "right side is not a boolean" + toString(operator));
+
+        return BoolExpression.Implemented(expression, operator, rightElement);
     } else {
         return BoolExpression.Normal(expression);
     }
@@ -78,7 +85,32 @@ fn compFromTree(node: Node, context: Context) -> ComparisonExpression {
     if isPresent(right, "comparisonArithmeticFunc") {
         let function = getNode(right,"comparisonArithmeticFunc");
         let rightElement = compFromTree(getNode(right, "comparisonArithmetic"), context);
-        return ComparisonExpression.Implemented(expression, OperatorFromTree(function), rightElement);
+        let operator = OperatorFromTree(function);
+
+        let leftType = getAriExprType(expression);
+        let rightType = getCompExprType(rightElement);
+        let eqComp = false;
+        if operator matches Equals() {
+            eqComp = true;
+        } else if operator matches NonEquals() {
+            eqComp = true;
+        }
+        let isString = false;
+        if testTypes(Type.Primitive("string"), leftType, emptyQuery()) && testTypes(Type.Primitive("string"), rightType, emptyQuery()) {
+            if eqComp {
+                isString = true;
+            } else {
+                throw AssertError("you can compare string with == or !=");
+            }
+        }
+        if !isString {
+            assertExprType(Type.Primitive("number"), leftType, "left side is not a number" + toString(operator));
+            assertExprType(Type.Primitive("number"), rightType, "right side is not a number" + toString(operator));
+        }
+
+        //TODO
+
+        return ComparisonExpression.Implemented(expression, operator, rightElement);
     } else {
         return ComparisonExpression.Normal(expression);
     }
@@ -93,7 +125,24 @@ fn arithmeticFromNode(node: Node, context: Context) -> ArithmeticExpression {
     if isPresent(right, "arithmeticFunc") {
         let function = getNode(right,"arithmeticFunc");
         let rightElement = arithmeticFromNode(getNode(right, "arithmetic"), context);
-        return ArithmeticExpression.Implemented(expression, OperatorFromTree(function), rightElement);
+
+        let leftType = getTermType(expression);
+        let rightType = getAriExprType(rightElement);
+        let operator = OperatorFromTree(function);
+        let isString = false;
+        if testTypes(Type.Primitive("string"), leftType, emptyQuery()) && testTypes(Type.Primitive("string"), rightType, emptyQuery()) {
+            if operator matches Add() {
+                isString = true;
+            } else {
+                throw AssertError("you can only add strings");
+            }
+        }
+        if !isString {
+            assertExprType(Type.Primitive("number"), leftType, "left side is not a number " + toString(operator));
+            assertExprType(Type.Primitive("number"), rightType, "right side is not a number " + toString(operator));
+        }
+
+        return ArithmeticExpression.Implemented(expression, operator, rightElement);
     } else {
         return ArithmeticExpression.Normal(expression);
     }
@@ -108,7 +157,13 @@ fn termFromTree(node: Node, context: Context) -> Term {
     if isPresent(right, "termFunc") {
         let function = getNode(right,"termFunc");
         let rightElement = termFromTree(getNode(right, "term"), context);
-        return Term.Implemented(expression, OperatorFromTree(function), rightElement);
+        let operator = OperatorFromTree(function);
+        let leftType = getFactorType(expression);
+        let rightType = getTermType(rightElement);
+        assertExprType(Type.Primitive("number"), leftType, "left side is not a number" + toString(operator));
+        assertExprType(Type.Primitive("number"), rightType, "right side is not a number" + toString(operator));
+
+        return Term.Implemented(expression, operator, rightElement);
     } else {
         return Term.Normal(expression);
     }
@@ -122,7 +177,9 @@ fn factorFromTree(node: Node, context: Context) -> Factor {
         return Factor.Expression(Expression.Bool(boolFromNode(expr, context)));
     } else if isPresent(node, "unary") {
         let expr = getNode(node, "unary");
-        return Factor.NegUnary(factorFromTree(getNode(expr, "factor"), context));
+        let subFactor = factorFromTree(getNode(expr, "factor"), context);
+        assertExprType(Type.Primitive("number"), getFactorType(subFactor), "only negate a number");
+        return Factor.NegUnary(subFactor);
     } else if isPresent(node, "string") {
         let expr = getNode(node, "string");
         let str: string = child(expr).record.data;
@@ -140,7 +197,9 @@ fn factorFromTree(node: Node, context: Context) -> Factor {
         return Factor.BoolLiteral(boolean);
     } else if isPresent(node, "not") {
         let expr = getNode(node, "not");
-        return Factor.Not(factorFromTree(getNode(expr, "factor"), context));
+        let subFactor = factorFromTree(getNode(expr, "factor"), context);
+        assertExprType(Type.Primitive("bool"), getFactorType(subFactor), "only invert a boolean");
+        return Factor.Not(subFactor);
     } else if isPresent(node, "member") {
        let expr = getNode(node, "member");
        return Factor.Member(memberFromTree(expr, context));
@@ -160,14 +219,14 @@ fn getExprType(expression: Expression) -> Type {
 
 fn getBoolExprType(expr: BoolExpression) -> Type {
     if expr matches Implemented(a,b,c) {
-        return getCompExprType(a);
+        return Type.Primitive("bool");
     } else matches Normal(a) {
         return getCompExprType(a);
     }
 }
 fn getCompExprType(expr: ComparisonExpression) -> Type {
     if expr matches Implemented(a,b,c) {
-        return getAriExprType(a);
+        return Type.Primitive("bool");
     } else matches Normal(a) {
         return getAriExprType(a);
     }
@@ -183,7 +242,7 @@ fn getAriExprType(expr: ArithmeticExpression) -> Type {
 
 fn getTermType(expr: Term) -> Type {
     if expr matches Implemented(a,b,c) {
-        return getFactorType(a);
+        return Type.Primitive("number");
     } else matches Normal(a) {
         return getFactorType(a);
     }
@@ -212,6 +271,12 @@ fn getFactorType(expr: Factor) -> Type {
         Member(member) -> {
             return member.returnType;
         }
+    }
+}
+
+fn assertExprType(expected: Type, found: Type, msg: string) {
+    if !testTypes(expected, found, emptyQuery()) {
+        throw AssertError(msg);
     }
 }
 

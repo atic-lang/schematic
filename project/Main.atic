@@ -20,6 +20,7 @@ fn Main() {
     );
     let src: string = loadFile("res/res2/testGrammar.txt");
     let ruleSet = generateRuleSet(split(src,"\n"));
+    src = "";
     compileProject(project,ruleSet);
 }
 

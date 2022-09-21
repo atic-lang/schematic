@@ -91,5 +91,25 @@ fn typeListFromTree(node: Node, context: Context) -> List<Type> {
     return list;
 }
 
+fn substituteStruct(structImpl: StructImpl, lookup: Map<GenericType,Type>) -> StructImpl {
+    let list = newList<Type>();
+    forEach(structImpl.implementation, fn (implType: Type) -> void {
+
+        if implType matches Struct(subStruct) {
+           insert(list, Type.Struct(substituteStruct(subStruct, lookup)));
+        } else if implType matches Generic(genericType) {
+            let result = get(lookup, genericType);
+            if result matches Some(res) {
+                insert(list, res);
+            } else {
+                insert(list, implType);
+            }
+        } else {
+            insert(list, implType);
+        }
+
+    });
+    return StructImpl(structImpl.type, list);
+}
 
 
