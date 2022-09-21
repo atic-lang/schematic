@@ -3,48 +3,83 @@ use atic.schematic.Atic;
 use atic.schematic.type.Type;
 
 struct MatchQuery {
-    toResolve: Set<GenericType>;
+    toResolve: List<GenericType>;
     resolved: Map<GenericType,Type>;
 }
 
+fn emptyQuery() -> MatchQuery {
+    return MatchQuery(newList<GenericType>(), newMap<GenericType,Type>());
+}
 
-fn test(a_: Type, b_: Type, query: MatchQuery) -> bool {
-    let a: Type = a_;
-    let b: Type = b_;
+fn testTypes(toMatch: Type, found: Type, query: MatchQuery) -> bool {
 
-
-
-    match a {
+    match toMatch {
+        Generic(typeA) -> {
+            if contains(query.toResolve, typeA) {
+                if get(query.resolved, typeA) matches Some(foundMatch) {
+                    return testTypes(foundMatch, found, query);
+                } else {
+                    put(query.resolved, typeA, found);
+                    return true;
+                }
+            } else {
+                if found matches Generic(typeB) {
+                    return eq(typeA, typeB);
+                } else {
+                    return false;
+                }
+            }
+        }
         Struct(typeA) -> {
-            if b matches Struct(typeB) {
-                return true;
+            if found matches Struct(typeB) {
+                if !testTypeList(typeA.implementation, typeB.implementation, query) {
+                    return false;
+                }
+                return typeA.type.path.path == typeB.type.path.path;
             } else return false;
         }
         Enum(typeA) -> {
-            if b matches Enum(typeB) {
-                return true;
+            if found matches Enum(typeB) {
+                if !testTypeList(typeA.implementation, typeB.implementation, query) {
+                    return false;
+                }
+                return typeA.type.path.path == typeB.type.path.path;
             } else return false;
         }
         Function(typeA) -> {
-            if b matches Function(typeB) {
-                return true;
-            } else return false;
-        }
-        Generic(typeA) -> {
-            if b matches Generic(typeB) {
-                return true;
+            if found matches Function(typeB) {
+                return
+                    testTypeList(typeA.inputs, typeB.inputs, query) && testTypes(typeA.output, typeB.output, query);
             } else return false;
         }
         Array(typeA) -> {
-            if b matches Array(typeB) {
-                return true;
+            if found matches Array(typeB) {
+                return testTypes(typeA, typeB, query);
             } else return false;
         }
         Primitive(typeA) -> {
-             if b matches Primitive(typeB) {
-                 return true;
+             if found matches Primitive(typeB) {
+                 return typeA == typeB;
              } else return false;
         }
     }
 
+}
+
+fn testTypeList(listA: List<Type>, listB: List<Type>, query: MatchQuery) -> bool {
+     if listA.size != listB.size {
+         return false;
+     }
+     let i: number = 0;
+     let s: number = listA.size;
+
+     while i < s {
+         let a: Type = getAt(listA,i);
+         let b: Type = getAt(listB,i);
+         if !testTypes(a, b, query) {
+             return false;
+         }
+         i = i + 1;
+     }
+     return true;
 }

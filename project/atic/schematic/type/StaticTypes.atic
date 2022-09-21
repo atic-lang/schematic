@@ -84,6 +84,7 @@ struct Properties {
     isAsync: bool;
     isException: bool;
 }
+
 fn propertiesFromNode(node: Node) -> Properties {
     assertType(node,"properties");
     let property = Properties(false,false,false,false);

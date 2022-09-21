@@ -3,18 +3,21 @@ use atic.schematic.Expression;
 use atic.schematic.Context;
 use atic.schematic.type.Type;
 use atic.schematic.type.StaticTypes;
+use atic.schematic.type.TypeSystem;
 use atic.schematic.tokens.Tokenizer;
 use atic.schematic.tokens.Node;
+use atic.schematic.project.Project;
 use atic.schematic.Atic;
 
 struct Member {
-    type: MemberType
-    compounds: List<Access>;
+    type: MemberType;
+    returnType: Type;
 }
 
 enum MemberType {
-    External(Path);
-    Local(Variable);
+    Function(StaticFunction, List<Expression>);
+    Initialisation(Struct, List<Expression>);
+    Local(Variable, List<Access>);
 }
 
 enum Access {
@@ -27,11 +30,12 @@ fn memberFromTree(node: Node, context: Context) -> Member {
     assertType(node, "member");
     let startID: string = id(node);
     let contextVar = askForLocal(context, startID);
+    let nodeComponents = walk("varTerminal", "memberCompound", node);
     if contextVar matches Some(variable) {
         let compounds = newList<Access>();
         let typeRef = Ref(variable.type);
         if isPresent(node, "memberCompound") {
-            forEach(walk("varTerminal", "memberCompound", node) , fn (subNode: Node) -> void {
+            forEach(nodeComponents, fn (subNode: Node) -> void {
                 let subTerm: Node = child(subNode);
                 let subName = subTerm.name;
                 if subName == "memberAccess" {
@@ -102,12 +106,101 @@ fn memberFromTree(node: Node, context: Context) -> Member {
 
             });
         }
-        return Member(MemberType.Local(variable), compounds);
+        return Member(MemberType.Local(variable, compounds), typeRef.value);
     } else {
-        throw AssertError("cant find " + startID);
+        let pathOption = askFor(context, Path(startID));
+        if pathOption matches None() {
+            throw AssertError("cant find " + startID);
+        } else matches Some(pathEntry) {
+            match pathEntry {
+                Function(staticFunction) -> {
+                    if nodeComponents.size != 1 {
+                        throw AssertError("you have to call the function");
+                    }
+                    let callNode: Node = child(getAt(nodeComponents, 0));
+                    if callNode.name != "callAccess" {
+                        throw AssertError("you can only call a function");
+                    }
+
+                    let genericsType: GenericsType = genericsTypeFromNode(getNode(callNode, "genericsOptionalType"), context);
+                    let exprList = newList<Expression>();
+                    forEach(walk("expression", "argList", callNode), fn (subNode_: Node) -> void {
+                        let expr = exprFromNode(subNode_, context);
+                        insert(exprList, expr);
+                    });
+                    if exprList.size != staticFunction.inputs.size {
+                        throw AssertError("incompatible arg size");
+                    }
+                    let query = emptyQuery();
+
+                    let listA = exprList;
+                    let listB = staticFunction.inputs;
+                    let i: number = 0;
+                    let s: number = listA.size;
+
+                    while i < s {
+                        let a: Type = getExprType(getAt(listA,i));
+                        let b: Variable = getAt(listB,i);
+                        if !testTypes(a, b.type, query) {
+                            throw AssertError("incompatible arguments on function call");
+                        }
+                        i = i + 1;
+                    }
+                    //TODO implement remaining access
+                    //TODO generics
+                    return Member(MemberType.Function(staticFunction, exprList), staticFunction.output);
+                }
+                Enum(enum_) -> {
+                    //TODO generics
+                    throw AssertError("enum not impl");
+                }
+                Global() -> {
+                    throw AssertError("global not impl");
+                }
+                Interface(struct_) -> {
+                    if nodeComponents.size != 1 {
+                        throw AssertError("you have to call the struct to make an instance");
+                    }
+                    let callNode: Node = child(getAt(nodeComponents, 0));
+                    if callNode.name != "callAccess" {
+                        throw AssertError("you can only instantiate a struct");
+                    }
+
+                    let genericsType: GenericsType = genericsTypeFromNode(getNode(callNode, "genericsOptionalType"), context);
+                    let exprList = newList<Expression>();
+                    forEach(walk("expression", "argList", callNode), fn (subNode_: Node) -> void {
+                        let expr = exprFromNode(subNode_, context);
+                        insert(exprList, expr);
+                    });
+                    if exprList.size != struct_.members.size {
+                        throw AssertError("incompatible arg size");
+                    }
+                    let query = emptyQuery();
+
+                    let listA = exprList;
+                    let listB = struct_.members;
+                    let i: number = 0;
+                    let s: number = listA.size;
+
+                    while i < s {
+                        let a: Type = getExprType(getAt(listA,i));
+                        let b: BIEntry<string, Type> = getAt(listB,i);
+                        if !testTypes(a, b.value, query) {
+                            throw AssertError("incompatible arguments on initialisation");
+                        }
+                        i = i + 1;
+                    }
+
+
+                    //TODO implement remaining access
+                    //TODO generics
+                    let structImpl = StructImpl(struct_, newList<Type>());
+                    return Member(MemberType.Initialisation(struct_, exprList), Type.Struct(structImpl));
+                }
+            }
+        }
+
     }
-
-
 }
 
 fn MemberType(member: Member, context: Context) -> Result<Type,AticError> {

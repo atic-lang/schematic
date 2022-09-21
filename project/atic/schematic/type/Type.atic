@@ -49,6 +49,8 @@ fn typeFromTree(node: Node, context: Context) -> Type {
             return Type.Primitive("number");
         } else if path.path == "bool" {
             return Type.Primitive("bool");
+        } else if path.path == "string" {
+            return Type.Primitive("string");
         }
         let genericResult = askForGeneric(context, path);
         if genericResult matches Some(generic) {

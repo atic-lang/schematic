@@ -23,6 +23,20 @@ struct Context {
     returnType: Type;
 }
 
+struct Environment {
+    path: Path;
+    project: Project;
+    imports: List<Path>;
+}
+
+struct Variable {
+    name: string;
+    type: Type;
+    location: Location;
+    modifier: Modifier;
+}
+
+
 fn contextCopy(context: Context) -> Context {
     let list: List<Variable> = newList<Variable>();
     addAll(list,context.variables);
@@ -86,19 +100,6 @@ fn askForLocal(context: Context, name: string) -> Optional<Variable> {
 fn askForGlobal(context: Context, path: Path) -> Optional<PathEntry> {
     let entry: Optional<PathEntry> = getEntry(context.environment,path);
     return entry;
-}
-
-struct Environment {
-    path: Path;
-    project: Project;
-    imports: List<Path>;
-}
-
-struct Variable {
-    name: string;
-    type: Type;
-    location: Location;
-    modifier: Modifier;
 }
 
 fn <T> searchViaPath(imports: List<Path>, master: Path, path: Path, map: Map<string,T>) -> Optional<T> {

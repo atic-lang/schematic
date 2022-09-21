@@ -154,7 +154,7 @@ fn resolveFunctionHead(project: Project, unit: Unit) {
                     insert(inputs, variable);
                 });
                 let staticFunction: StaticFunction = StaticFunction(path, generics, properties, Optional.None<Statement>(), inputs, returnType);
-
+                put(project.entries, path.path, PathEntry.Function(staticFunction));
                 put(unit.functions, staticFunction, getNode(functionNode,"blockStatement"));
              }
          });

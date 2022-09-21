@@ -6,7 +6,7 @@ use atic.schematic.Atic;
 use atic.schematic.type.StaticTypes;
 
 enum PathEntry {
-    Function();
+    Function(StaticFunction);
     Enum(Enum);
     Global();
     Interface(Struct);

@@ -4,6 +4,7 @@ use atic.schematic.Member;
 use atic.schematic.Atic;
 use atic.schematic.tokens.Node;
 use atic.schematic.type.Type;
+use atic.schematic.type.TypeSystem;
 
 enum Statement {
     Block(BlockStatement);
@@ -67,7 +68,6 @@ fn statementFromNode(node: Node, context: Context) -> Statement {
         return Statement.Assign(assignFromTree(child_, context));
     }
 
-
     throw AssertError(name + " is not impl");
 }
 
@@ -75,6 +75,10 @@ fn assignFromTree(node: Node, context: Context) -> AssignStatement {
     assertType(node, "assignStatement");
     let expr = exprFromNode(getNode(node, "expression"),context);
     let member = memberFromTree(getNode(node, "member"),context);
+    let foundType = getExprType(expr);
+    if !testTypes(member.returnType, foundType, emptyQuery()) {
+        throw AssertError("declaration and assign not compatible");
+    }
     return AssignStatement(expr, member);
 }
 
@@ -115,22 +119,27 @@ fn returnFromTree(node: Node, context: Context) -> ReturnStatement {
 
 fn definitionFromTree(node: Node, context: Context) -> DeclarationStatement {
     assertType(node, "definitionStatement");
-    let type = getNode(node, "typeOfDefinition");
-    let typeName = child(type).record.data;
+    let typeOfDef = getNode(node, "typeOfDefinition");
+    let typeName = child(typeOfDef).record.data;
     let isConst: bool = typeName == "const";
 
     let nameOfDef = id(node);
     let expr: Expression = exprFromNode(getNode(node, "expression"),context);
-
+    let foundType = getExprType(expr);
     let defType: Node = getNode(node,"typeOfVar");
+    let typeOfDecl = Type.Primitive("");
     if isPresent(defType, "type") {
         let typeNode = getNode(defType, "type");
-        //TODO validate
+        let type = typeFromTree(typeNode, context);
+        typeOfDecl = type;
+        if !testTypes(type, foundType, emptyQuery()) {
+            throw AssertError("declaration not compatible");
+        }
     } else {
-        //TODO infer
+        typeOfDecl = foundType;
     }
 
-    let variable: Variable = Variable(nameOfDef, Type.Primitive("test"), Location.Local(), Modifier.Variable());
+    let variable: Variable = Variable(nameOfDef, typeOfDecl, Location.Local(), Modifier.Variable());
     if isConst {
         variable.modifier = Modifier.Final();
     }

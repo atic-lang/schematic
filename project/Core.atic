@@ -120,6 +120,7 @@ fn <T> doesMatchAny(list: List<T>, predicate: fn(T) -> bool) -> bool {
 }
 
 native fn <T> print(o: T) {}
+native fn <T,U> eq(t: T,u: U) -> bool {}
 native fn <T> insert(list: List<T>, element: T) {}
 native fn <T> newList() -> List<T> {}
 native fn <K,V> newMap() -> Map<K,V> {}

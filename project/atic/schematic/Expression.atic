@@ -150,24 +150,71 @@ fn factorFromTree(node: Node, context: Context) -> Factor {
     }
 }
 
-fn factorType(factor: Factor, context: Context) -> Result<Type,AticError> {
 
-   // match factor {
-   //    Expression(expression) -> return expressionType(expression,context);
-   //    Number(_) -> return Result.Ok(number_);
-   //    BoolLiteral(_) -> return Result.Ok(bool_);
-   //    Not(factor) -> return factorType(factor,context);
-   //    NegUnary(factor) -> return factorType(factor,context);
-   //    Member(member) -> return MemberType(member, context);
-   //}
-
-    return Result.Error<Type,AticError>(AticError(Position(-1,-1,-1),"not impl"));
-}
-
-fn expressionType(expression: Expression, context: Context) -> Result<Type,AticError> {
-    //return Result.Ok<Type,AticError>(Type.Primitive(-1));
+fn getExprType(expression: Expression) -> Type {
+    if expression matches Bool(boolExpr) {
+        return getBoolExprType(boolExpr);
+    }
     throw NotImplError();
 }
+
+fn getBoolExprType(expr: BoolExpression) -> Type {
+    if expr matches Implemented(a,b,c) {
+        return getCompExprType(a);
+    } else matches Normal(a) {
+        return getCompExprType(a);
+    }
+}
+fn getCompExprType(expr: ComparisonExpression) -> Type {
+    if expr matches Implemented(a,b,c) {
+        return getAriExprType(a);
+    } else matches Normal(a) {
+        return getAriExprType(a);
+    }
+}
+
+fn getAriExprType(expr: ArithmeticExpression) -> Type {
+    if expr matches Implemented(a,b,c) {
+        return getTermType(a);
+    } else matches Normal(a) {
+        return getTermType(a);
+    }
+}
+
+fn getTermType(expr: Term) -> Type {
+    if expr matches Implemented(a,b,c) {
+        return getFactorType(a);
+    } else matches Normal(a) {
+        return getFactorType(a);
+    }
+}
+
+fn getFactorType(expr: Factor) -> Type {
+    match expr {
+        Expression(expression) -> {
+            return getExprType(expression);
+        }
+        Number(_) -> {
+            return Type.Primitive("number");
+        }
+        BoolLiteral(_) -> {
+            return Type.Primitive("bool");
+        }
+        Not(factor) -> {
+            return getFactorType(factor);
+        }
+        NegUnary(factor) -> {
+            return getFactorType(factor);
+        }
+        String(_) -> {
+            return Type.Primitive("string");
+        }
+        Member(member) -> {
+            return member.returnType;
+        }
+    }
+}
+
 
 enum Operator {
     Add();
