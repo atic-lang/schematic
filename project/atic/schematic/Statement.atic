@@ -41,7 +41,7 @@ struct ReturnStatement {
 }
 
 struct SingleStatement {
-    expression: Expression;
+    member: Member;
 }
 
 struct WhileStatement {
@@ -64,8 +64,12 @@ fn statementFromNode(node: Node, context: Context) -> Statement {
         return Statement.Branch(branchFromTree(child_, context));
     } else if name == "whileStatement" {
         return Statement.While(whileFromTree(child_, context));
-    } else if name == "assignStatement"  {
+    } else if name == "assignStatement" {
         return Statement.Assign(assignFromTree(child_, context));
+    } else if name == "singleExpression" {
+        let memberChild = getNode(child_, "member");
+        let member = memberFromTree(memberChild, context)
+        return Statement.Single(SingleStatement(member));
     }
 
     throw AssertError(name + " is not impl");
@@ -87,7 +91,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
     let expr = exprFromNode(getNode(node, "expression"),context);
     let stmt = statementFromNode(getNode(node, "statement"), context);
     let elseStmt = Statement.Block(BlockStatement(newList<Statement>()));
-    let elsePart = getNode(node, "elseBranch");
+    let elsePart = getNode(node, "endOfBranch");
     if isPresent(elsePart, "elseStatement") {
         let elseBranch = getNode(elsePart, "elseStatement");
         elseStmt = statementFromNode(getNode(elseBranch, "statement"), context);
@@ -117,7 +121,6 @@ fn returnFromTree(node: Node, context: Context) -> ReturnStatement {
     assertExprType(context.returnType, returnType, "return not compatible");
     return ReturnStatement(option);
 }
-
 
 fn definitionFromTree(node: Node, context: Context) -> DeclarationStatement {
     assertType(node, "definitionStatement");

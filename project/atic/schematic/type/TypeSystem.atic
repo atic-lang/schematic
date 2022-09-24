@@ -7,8 +7,29 @@ struct MatchQuery {
     resolved: Map<GenericType,Type>;
 }
 
+fn isFullyResolved(query: MatchQuery) -> bool {
+    let i: number = 0;
+    let s: number = query.toResolve.size;
+    while i < s {
+        let element: GenericType = getAt(query.toResolve,i);
+        if get(query.resolved, element) matches None() {
+            return false;
+        }
+        i = i + 1;
+    }
+    return true;
+}
+
 fn emptyQuery() -> MatchQuery {
     return MatchQuery(newList<GenericType>(), newMap<GenericType,Type>());
+}
+
+fn solvedList(query: MatchQuery) -> List<Type> {
+    let list = newList<Type>();
+    forEachBI(query.resolved, fn (entry: GenericType, type: Type) -> void {
+        insert(list, type);
+    });
+    return list;
 }
 
 fn testTypes(toMatch: Type, found: Type, query: MatchQuery) -> bool {

@@ -23,7 +23,8 @@ native struct Stack<T> {
 native struct Map<K,V> {
 
 }
-native struct BIEntry<K,V> {
+
+struct BIEntry<K,V> {
     key: K;
     value: V;
 }

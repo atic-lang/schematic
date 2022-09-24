@@ -91,25 +91,80 @@ fn typeListFromTree(node: Node, context: Context) -> List<Type> {
     return list;
 }
 
-fn substituteStruct(structImpl: StructImpl, lookup: Map<GenericType,Type>) -> StructImpl {
-    let list = newList<Type>();
-    forEach(structImpl.implementation, fn (implType: Type) -> void {
-
-        if implType matches Struct(subStruct) {
-           insert(list, Type.Struct(substituteStruct(subStruct, lookup)));
-        } else if implType matches Generic(genericType) {
-            let result = get(lookup, genericType);
-            if result matches Some(res) {
-                insert(list, res);
-            } else {
-                insert(list, implType);
-            }
-        } else {
-            insert(list, implType);
-        }
-
-    });
-    return StructImpl(structImpl.type, list);
+fn substitute(type: Type, lookup: Map<GenericType, Type>) -> Type {
+    if type matches Struct(structImpl) {
+        let list = newList<Type>();
+        forEach(structImpl.implementation, fn (implType: Type) -> void {
+            insert(list, substitute(implType, lookup));
+        });
+        return Type.Struct(StructImpl(structImpl.type, list));
+   } else if type matches Enum(enumImpl) {
+        let list = newList<Type>();
+        forEach(enumImpl.implementation, fn (implType: Type) -> void {
+            insert(list, substitute(implType, lookup));
+        });
+        return Type.Enum(EnumImpl(enumImpl.type, list));
+   } else if type matches Function(functionType) {
+       throw AssertError("function for resolving is not impl");
+   } else if type matches Array(element) {
+       return Type.Array(substitute(element, lookup));
+   } else if type matches Generic(genericType) {
+       let result = get(lookup, genericType);
+       if result matches Some(res) {
+           return res;
+       } else {
+           return type;
+       }
+   } else if type matches Primitive(str) {
+       return type;
+   }
+   throw AssertError(toString(type) + " is not impl");
 }
 
+fn typeToSting(type: Type) -> string {
+    if type matches Struct(structImpl) {
+        return "struct " + structImpl.type.path.path;
+    } else if type matches Enum(enumImpl) {
+        return "enum " + enumImpl.type.path.path;
+    } else if type matches Function(functionType) {
+        return "function ";
+    } else if type matches Array(element) {
+        return "Array of " + typeToSting(element);
+    } else if type matches Generic(genericType) {
+        return "Generic " + genericType.name;
+    } else if type matches Primitive(str) {
+        return "primitive " + str;
+    }
+    throw AssertError(toString(type) + " is not impl");
+}
 
+fn getMembers(structImpl: StructImpl) -> List<BIEntry<string,Type>> {
+    let members = newList<BIEntry<string,Type>>();
+    let lookup = createLookup(structImpl);
+    forEach(structImpl.type.members, fn (entry: BIEntry<string,Type>) -> void {
+        let type: Type = entry.value;
+        let name: string = entry.key;
+        let subType: Type = substitute(type, lookup)
+        insert(members, BIEntry(name, subType));
+    });
+    return members;
+}
+
+fn createLookup(structImpl: StructImpl) -> Map<GenericType, Type> {
+    let map = newMap<GenericType, Type>();
+    let listA = structImpl.type.generics.types;
+    let listB = structImpl.implementation;
+    if listA.size != listB.size {
+        throw AssertError("incompatible generic size");
+    }
+    let i: number = 0;
+    let s: number = listA.size;
+    while i < s {
+        let implType = getAt(listB,i);
+        let next = getAt(listA,i);
+        put(map, next, implType);
+        i = i + 1;
+    }
+
+    return map;
+}

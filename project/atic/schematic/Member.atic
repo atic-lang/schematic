@@ -45,7 +45,7 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                         let memberName: string = id(subTerm);
                         let memberReference = Optional.None<Type>();
                         let memberIndex = -1;
-                        let list = structImpl.type.members;
+                        let list = getMembers(structImpl);
                         let i: number = 0;
                         let s: number = list.size;
 
@@ -53,6 +53,8 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                             let element: BIEntry<string,Type> = getAt(list,i);
                             if element.key == memberName {
                                 memberReference = Optional.Some(element.value);
+                                print("indexing " + toString(i));
+                                print(typeToSting(element.value));
                                 memberIndex = i;
                             }
                             i = i + 1;
@@ -65,70 +67,18 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                             insert(compounds, access);
                             typeRef.value = member;
                         }
-
                     } else {
                         throw AssertError("cant access a member from a here");
                     }
                 } else if subName == "callAccess" {
-
-                    let genericsType: GenericsType = genericsTypeFromNode(getNode(subTerm, "genericsOptionalType"), context);
-                    let exprList = newList<Expression>();
-                    forEach(walk("expression", "argList", subTerm), fn (subNode_: Node) -> void {
-                        let expr = exprFromNode(subNode_, context);
-                        insert(exprList, expr);
-                    });
-
                     let inType: Type = typeRef.value;
                     if inType matches Function(functionType) {
-                        if exprList.size != functionType.inputs.size {
-                            throw AssertError("incompatible arg size");
-                        }
-                        let generics = functionType.generics;
-                        let query = MatchQuery(generics.types, newMap<GenericType,Type>());
-
-                        if genericsType.types.size != 0 {
-                            if genericsType.types.size != generics.types.size {
-                                throw AssertError("incompatible generic hint size");
-                            }
-                            let i: number = 0;
-                            let s: number = generics.types.size;
-                            while i < s {
-                                let a = getAt(genericsType.types,i);
-                                let b = getAt(query.toResolve,i);
-                                put(query.resolved, b, a);
-                                i = i + 1;
-                            }
-                        }
-
-                        let i: number = 0;
-                        let s: number = exprList.size;
-
-                        while i < s {
-                            let a: Type = getAt(functionType.inputs,i);
-                            let b: Type = getExprType(getAt(exprList,i));
-                            if !testTypes(a, b, query) {
-                                throw AssertError("incompatible arguments on function call");
-                            }
-                            i = i + 1;
-                        }
-
-                        let output = functionType.output;
-                        let lookup = query.resolved;
-                        if output matches Struct(structImpl) {
-                            output = Type.Struct(substituteStruct(structImpl, lookup));
-                        } else if output matches Generic(genericType) {
-                            let result = get(lookup, genericType);
-                            if result matches Some(res) {
-                                output = res;
-                            }
-                        }
-
-                        let access = Access.Call(output, exprList);
+                        let call = callAccess(CallableType.Function(functionType), subTerm, context);
+                        let access = Access.Call(call.returnType, call.arguments);
                         insert(compounds, access);
-                        typeRef.value = output;
-
+                        typeRef.value = call.returnType;
                     } else {
-                        throw AssertError("cant call a here");
+                        throw AssertError("only call a function");
                     }
                 } else if subName == "arrayAccess" {
                     let inType: Type = typeRef.value;
@@ -159,65 +109,17 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                     if callNode.name != "callAccess" {
                         throw AssertError("you can only call a function");
                     }
-
-                    let genericsType: GenericsType = genericsTypeFromNode(getNode(callNode, "genericsOptionalType"), context);
-                    let exprList = newList<Expression>();
-                    forEach(walk("expression", "argList", callNode), fn (subNode_: Node) -> void {
-                        let expr = exprFromNode(subNode_, context);
-                        insert(exprList, expr);
+                    let argList = newList<Type>();
+                    forEach(staticFunction.inputs, fn (var: Variable) -> void {
+                        insert(argList, var.type);
                     });
-                    if exprList.size != staticFunction.inputs.size {
-                        throw AssertError("incompatible arg size");
-                    }
-                    //************************************
-                    let generics = staticFunction.generics;
-                    let query = MatchQuery(generics.types, newMap<GenericType,Type>());
-
-                    if genericsType.types.size != 0 {
-                        if genericsType.types.size != generics.types.size {
-                            throw AssertError("incompatible generic hint size");
-                        }
-                        let i: number = 0;
-                        let s: number = generics.types.size;
-                        while i < s {
-                            let a = getAt(genericsType.types,i);
-                            let b = getAt(query.toResolve,i);
-                            put(query.resolved, b, a);
-                            i = i + 1;
-                        }
-                    }
-
-                    let i: number = 0;
-                    let s: number = exprList.size;
-
-                    while i < s {
-                        let a: Variable = getAt(staticFunction.inputs,i);
-                        let b: Type = getExprType(getAt(exprList,i));
-                        if !testTypes(a.type, b, query) {
-                            throw AssertError("incompatible arguments on function call");
-                        }
-                        i = i + 1;
-                    }
-
-                    let output = staticFunction.output;
-                    let lookup = query.resolved;
-                    if output matches Struct(structImpl) {
-                        output = Type.Struct(substituteStruct(structImpl, lookup));
-                    } else if output matches Generic(genericType) {
-                        let result = get(lookup, genericType);
-                        if result matches Some(res) {
-                            output = res;
-                        }
-                    }
-                    //***************************************
-
-
+                    let asFunctionType = FunctionType(argList, staticFunction.output, staticFunction.generics);
+                    let call = callAccess(CallableType.Function(asFunctionType), callNode, context);
                     //TODO implement remaining access
-                    //TODO generics
-                    return Member(MemberType.Function(staticFunction, exprList), output);
+                    return Member(MemberType.Function(staticFunction, call.arguments), call.returnType);
                 }
                 Enum(enum_) -> {
-                    //TODO generics
+                    //TODO
                     throw AssertError("enum not impl");
                 }
                 Global() -> {
@@ -231,37 +133,8 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                     if callNode.name != "callAccess" {
                         throw AssertError("you can only instantiate a struct");
                     }
-
-                    let genericsType: GenericsType = genericsTypeFromNode(getNode(callNode, "genericsOptionalType"), context);
-                    let exprList = newList<Expression>();
-                    forEach(walk("expression", "argList", callNode), fn (subNode_: Node) -> void {
-                        let expr = exprFromNode(subNode_, context);
-                        insert(exprList, expr);
-                    });
-                    if exprList.size != struct_.members.size {
-                        throw AssertError("incompatible arg size");
-                    }
-                    let query = emptyQuery();
-
-                    let listA = exprList;
-                    let listB = struct_.members;
-                    let i: number = 0;
-                    let s: number = listA.size;
-
-                    while i < s {
-                        let a: Type = getExprType(getAt(listA,i));
-                        let b: BIEntry<string, Type> = getAt(listB,i);
-                        if !testTypes(a, b.value, query) {
-                            throw AssertError("incompatible arguments on initialisation");
-                        }
-                        i = i + 1;
-                    }
-
-
-                    //TODO implement remaining access
-                    //TODO generics
-                    let structImpl = StructImpl(struct_, newList<Type>());
-                    return Member(MemberType.Initialisation(struct_, exprList), Type.Struct(structImpl));
+                    let call = callAccess(CallableType.Struct(struct_), callNode, context);
+                    return Member(MemberType.Initialisation(struct_, call.arguments), call.returnType);
                 }
             }
         }
@@ -272,4 +145,109 @@ fn memberFromTree(node: Node, context: Context) -> Member {
 fn MemberType(member: Member, context: Context) -> Result<Type,AticError> {
    // return Result.Ok<Type,AticError>(Type.Primitive(-1));
    throw NotImplError();
+}
+
+enum CallableType {
+    Function(FunctionType);
+    Struct(Struct);
+    Enum(Enum);
+}
+
+struct CallAccess {
+    arguments: List<Expression>;
+    returnType: Type;
+}
+
+fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAccess {
+    assertType(node, "callAccess");
+
+    let genericsType: GenericsType = genericsTypeFromNode(getNode(node, "genericsOptionalType"), context);
+    let exprList = newList<Expression>();
+    forEach(walk("expression", "argList", node), fn (subNode_: Node) -> void {
+        let expr = exprFromNode(subNode_, context);
+        insert(exprList, expr);
+    });
+
+    if callable matches Function(functionType) {
+        if exprList.size != functionType.inputs.size {
+            throw AssertError("incompatible arg size");
+        }
+        let generics = functionType.generics;
+        let query = MatchQuery(generics.types, newMap<GenericType,Type>());
+
+        if genericsType.types.size != 0 {
+            if genericsType.types.size != generics.types.size {
+                throw AssertError("incompatible generic hint size");
+            }
+            let i: number = 0;
+            let s: number = generics.types.size;
+            while i < s {
+                let a = getAt(genericsType.types,i);
+                let b = getAt(query.toResolve,i);
+                put(query.resolved, b, a);
+                i = i + 1;
+            }
+        }
+
+        let i: number = 0;
+        let s: number = exprList.size;
+
+        while i < s {
+            let a: Type = getAt(functionType.inputs,i);
+            let b: Type = getExprType(getAt(exprList,i));
+            if !testTypes(a, b, query) {
+                throw AssertError("incompatible arguments on function call");
+            }
+            i = i + 1;
+        }
+
+        if !isFullyResolved(query) {
+            throw AssertError("Query not fully solved (function)");
+        }
+
+        let lookup = query.resolved;
+        let output = substitute(functionType.output, lookup);
+        return CallAccess(exprList, output);
+    } else if callable matches Struct(struct_) {
+        if exprList.size != struct_.members.size {
+            throw AssertError("incompatible arg size");
+        }
+        let generics = struct_.generics;
+        let query = MatchQuery(generics.types, newMap<GenericType,Type>());
+
+        if genericsType.types.size != 0 {
+            if genericsType.types.size != generics.types.size {
+                throw AssertError("incompatible generic hint size");
+            }
+            let i: number = 0;
+            let s: number = generics.types.size;
+            while i < s {
+                let a = getAt(genericsType.types,i);
+                let b = getAt(query.toResolve,i);
+                put(query.resolved, b, a);
+                i = i + 1;
+            }
+        }
+
+        let i: number = 0;
+        let s: number = exprList.size;
+
+        while i < s {
+            let a: Type = getExprType(getAt(exprList,i));
+            let b: BIEntry<string, Type> = getAt(struct_.members,i);
+            if !testTypes(b.value, a, query) {
+                throw AssertError("incompatible arguments on initialisation");
+            }
+            i = i + 1;
+        }
+
+        if !isFullyResolved(query) {
+            throw AssertError("Query not fully solved (initialisation)");
+        }
+
+        //TODO implement remaining access
+        let solvedList = solvedList(query);
+        return CallAccess(exprList, Type.Struct(StructImpl(struct_, solvedList)));
+    }
+    throw AssertError("not impl");
 }

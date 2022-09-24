@@ -138,7 +138,8 @@ fn resolveFunctionHead(project: Project, unit: Unit) {
                     environment,
                     newList<Variable>(),
                     generics,
-                    Type.Primitive("void"));
+                    Type.Primitive("void")
+                );
 
                 let returnNode: Node = getNode(functionNode,"returnType");
                 let returnType: Type = Type.Primitive("void");
