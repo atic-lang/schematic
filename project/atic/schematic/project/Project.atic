@@ -17,6 +17,7 @@ struct Project {
     file: string;
     units: List<Unit>;
     extensions: lst string;
+    defaultImports: List<Path>;
 }
 
 fn getEntry(environment: Environment, path: Path) -> Optional<PathEntry> {
@@ -42,5 +43,5 @@ struct Unit {
     environment: Optional<Environment>;
     interfaces: Map<Struct, Node>;
     functions: Map<StaticFunction, Node>;
-    //functions:
+    enums: Map<Enum, Node>;
 }

@@ -17,6 +17,7 @@ struct Member {
 enum MemberType {
     Function(StaticFunction, List<Expression>);
     Initialisation(Struct, List<Expression>);
+    EnumOption(Enum, EnumEntry, List<Expression>);
     Local(Variable, List<Access>);
 }
 
@@ -53,8 +54,6 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                             let element: BIEntry<string,Type> = getAt(list,i);
                             if element.key == memberName {
                                 memberReference = Optional.Some(element.value);
-                                print("indexing " + toString(i));
-                                print(typeToSting(element.value));
                                 memberIndex = i;
                             }
                             i = i + 1;
@@ -119,8 +118,27 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                     return Member(MemberType.Function(staticFunction, call.arguments), call.returnType);
                 }
                 Enum(enum_) -> {
-                    //TODO
-                    throw AssertError("enum not impl");
+                    if nodeComponents.size != 2 {
+                        throw AssertError("you have need a member and call");
+                    }
+                    let enumOption: Node = child(getAt(nodeComponents, 0));
+                    let callNode: Node = child(getAt(nodeComponents, 1));
+                    if enumOption.name != "memberAccess" {
+                        throw AssertError("you need a member here");
+                    }
+                    if callNode.name != "callAccess" {
+                        throw AssertError("you need a call here");
+                    }
+                    let optionName = id(enumOption);
+                    let find = findAny(enum_.members, fn (entry: EnumEntry) -> bool {
+                        return entry.name == optionName;
+                    });
+                    if find matches Some(enumType) {
+                        let call = callAccess(CallableType.Enum(enum_, enumType), callNode, context);
+                        return Member(MemberType.EnumOption(enum_, enumType, call.arguments), call.returnType);
+                    } else {
+                        throw AssertError("cant find any option for " + optionName + " in " + enum_.path.path);
+                    }
                 }
                 Global() -> {
                     throw AssertError("global not impl");
@@ -150,7 +168,7 @@ fn MemberType(member: Member, context: Context) -> Result<Type,AticError> {
 enum CallableType {
     Function(FunctionType);
     Struct(Struct);
-    Enum(Enum);
+    Enum(Enum, EnumEntry);
 }
 
 struct CallAccess {
@@ -248,6 +266,45 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         //TODO implement remaining access
         let solvedList = solvedList(query);
         return CallAccess(exprList, Type.Struct(StructImpl(struct_, solvedList)));
+    } else if callable matches Enum(enum_, enumEntry) {
+        if exprList.size != enumEntry.components.size {
+            throw AssertError("incompatible arg size for enums");
+        }
+        let generics = enum_.generics;
+        let query = MatchQuery(generics.types, newMap<GenericType,Type>());
+
+        if genericsType.types.size != 0 {
+            if genericsType.types.size != generics.types.size {
+                throw AssertError("incompatible generic hint size");
+            }
+            let i: number = 0;
+            let s: number = generics.types.size;
+            while i < s {
+                let a = getAt(genericsType.types,i);
+                let b = getAt(query.toResolve,i);
+                put(query.resolved, b, a);
+                i = i + 1;
+            }
+        }
+
+        let i: number = 0;
+        let s: number = exprList.size;
+
+        while i < s {
+            let a: Type = getExprType(getAt(exprList,i));
+            let b: Type = getAt(enumEntry.components,i);
+            if !testTypes(b, a, query) {
+                throw AssertError("incompatible arguments on initialisation");
+            }
+            i = i + 1;
+        }
+
+        if !isFullyResolved(query) {
+            throw AssertError("Query not fully solved (enum)");
+        }
+
+        let solvedList = solvedList(query);
+        return CallAccess(exprList, Type.Enum(EnumImpl(enum_, solvedList)));
     }
     throw AssertError("not impl");
 }

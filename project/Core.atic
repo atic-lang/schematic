@@ -34,6 +34,17 @@ struct Ref<T> {
     value: T;
 }
 
+fn <T> forEachI(list: List<T>,consumer: fn(T, number) -> void) {
+    let i: number = 0;
+    let s: number = list.size;
+
+    while i < s {
+        let element: T = getAt(list,i);
+        consumer(element, i);
+        i = i + 1;
+    }
+}
+
 fn <K,V> forEachBI(map: Map<K,V>,consumer: fn(K,V) -> void) {
     let i: number = 0;
     let list: List<BIEntry<K,V>> = getEntries(map);
@@ -86,7 +97,7 @@ fn <T> filter(list: List<T>,predicate: fn(T) -> bool) -> List<T> {
     return newLst;
 }
 
-fn <T,S> findAny(list: List<T>, predicate: fn(T) -> Optional<S>) -> Optional<S> {
+fn <T> findAny(list: List<T>, predicate: fn(T) -> bool) -> Optional<T> {
     let newLst: List<T> = newList<T>();
 
     let i: number = 0;
@@ -94,13 +105,13 @@ fn <T,S> findAny(list: List<T>, predicate: fn(T) -> Optional<S>) -> Optional<S> 
 
     while i < s {
         let element: T = getAt(list,i);
-        if predicate(element) matches Some(res) {
-            return Optional.Some<S>(res);
+        if predicate(element) {
+            return Optional.Some(element);
         }
         i = i + 1;
     }
 
-    return Optional.None<S>();
+    return Optional.None<T>();
 }
 
 fn <T> doesMatchAny(list: List<T>, predicate: fn(T) -> bool) -> bool {

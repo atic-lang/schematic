@@ -51,6 +51,8 @@ fn exprFromNode(node: Node, context: Context) -> Expression {
     if isPresent(node, "boolArithmetic") {
         let boolExpr = boolFromNode(getNode(node,"boolArithmetic"),context);
         return Expression.Bool(boolExpr);
+    } else if isPresent(node, "boolArithmetic") {
+
     }
     throw AssertError("not impl for complex");
 }

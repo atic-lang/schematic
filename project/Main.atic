@@ -12,11 +12,14 @@ use atic.schematic.Statement;
 
 
 fn Main() {
+    let defaultImports = newList<Path>();
+    insert(defaultImports, Path("Core"));
     let project: Project = Project(
         newMap<string,PathEntry>(),
         "res/res2",
         newList<Unit>(),
-        ["atic"]
+        ["atic"],
+        defaultImports
     );
     let src: string = loadFile("res/res2/testGrammar.txt");
     let ruleSet = generateRuleSet(split(src,"\n"));
@@ -40,7 +43,8 @@ fn compileProject(project: Project, rules: RuleSet) {
                 Optional.None<Node>(),
                 Optional.None<Environment>(),
                 newMap<Struct,Node>(),
-                newMap<StaticFunction,Node>()
+                newMap<StaticFunction,Node>(),
+                newMap<Enum,Node>()
             );
 
             insert(units, unit);
@@ -84,24 +88,38 @@ fn lexUnit(project: Project, unit: Unit, tokenList: List<Token>, rules: RuleSet)
     let environment = Environment(unit.path, project, newList<Path>());
     unit.environment = Optional.Some(environment);
 
+    forEach(project.defaultImports, fn (import: Path) -> void {
+        insert(environment.imports,import);
+    });
+
     let list: List<Node> = walk("top", "topList", node);
     forEach(list, fn (n: Node) -> void {
         if isPresent(n, "struct") {
-             let struct_ = getNode(n,"struct");
-             let name = id(struct_);
-             let path = pathAddStr(environment.path, name);
-             let structObj = Struct(
-                 path,
-                 genericsFromNode(getNode(struct_, "genericsOptional")),
-                 propertiesFromNode(getNode(struct_, "properties")),
-                 newList<BIEntry<string,Type>>()
-             );
-             put(project.entries, path.path, PathEntry.Interface(structObj));
-             put(unit.interfaces, structObj, struct_);
+            let struct_ = getNode(n,"struct");
+            let name = id(struct_);
+            let path = pathAddStr(environment.path, name);
+            let structObj = Struct(
+                path,
+                genericsFromNode(getNode(struct_, "genericsOptional")),
+                propertiesFromNode(getNode(struct_, "properties")),
+                newList<BIEntry<string,Type>>()
+            );
+            put(project.entries, path.path, PathEntry.Interface(structObj));
+            put(unit.interfaces, structObj, struct_);
         } else if isPresent(n, "import") {
-             let import_ = getNode(n, "import");
-             let path = newPathNode(getNode(import_, "nChain"));
-             insert(environment.imports,path);
+            let import_ = getNode(n, "import");
+            let path = newPathNode(getNode(import_, "nChain"));
+            insert(environment.imports,path);
+        } else if isPresent(n, "enumDef") {
+            let enum_ = getNode(n, "enumDef");
+            let name = id(enum_);
+            let path = pathAddStr(environment.path, name);
+            let generics = genericsFromNode(getNode(enum_, "genericsOptional"))
+            let dummyProperties = Properties(false, false, false, false);
+            //TODO make real properties
+            let enumObj = Enum(path, generics, dummyProperties, newList<EnumEntry>());
+            put(project.entries, path.path, PathEntry.Enum(enumObj));
+            put(unit.enums, enumObj, enum_);
         }
     });
 }
@@ -118,6 +136,18 @@ fn resolveMembers(project: Project, unit: Unit) {
                 let biEntry = BIEntry(name, typeFromTree(typeNode, context));
                 insert(list, biEntry);
             });
+        });
+        forEachBI(unit.enums, fn (enum_: Enum, node: Node) -> void {
+            let members = newList<EnumEntry>();
+            let context = Context(environment, newList<Variable>(), enum_.generics, Type.Primitive("void"));
+            forEachI(walk("enumEntry", "enumEntries", node), fn (entry: Node, index: number) -> void {
+                let typeList = typeListFromTree(getNode(entry, "typeList"), context);
+                let name = id(entry);
+                //TODO collisions
+                let enumEntry = EnumEntry(name, typeList);
+                insert(members, enumEntry);
+            });
+            enum_.members = members;
         });
     }
 }
@@ -192,14 +222,8 @@ fn generateNode(src: string, tokens: List<Token>, rules: RuleSet) -> Node {
          else return true;
     });
 
-    /*
-    forEach(filtered, fn (rec: TokenRecord) -> void {
-        print(rec.token.alias);
-        print(rec.data);
-        print("");
-    });
-    */
-
+    //let token_end_of_file: Token = genToken("EOF", "$a^", "$a^");
+    //insert(filtered, TokenRecord(token_end_of_file, "EOF", Position(0,0,lineCount.value)));
 
     let node: Node = reverseRule(rules,"entry",filtered);
     return node;

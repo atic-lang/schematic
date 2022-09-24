@@ -105,7 +105,12 @@ fn substitute(type: Type, lookup: Map<GenericType, Type>) -> Type {
         });
         return Type.Enum(EnumImpl(enumImpl.type, list));
    } else if type matches Function(functionType) {
-       throw AssertError("function for resolving is not impl");
+        let inputs = newList<Type>();
+        forEach(functionType.inputs, fn (implType: Type) -> void {
+            insert(inputs, substitute(implType, lookup));
+        });
+        let func = FunctionType(inputs, substitute(functionType.output, lookup), Generics(newList<GenericType>()));
+        return Type.Function(func);
    } else if type matches Array(element) {
        return Type.Array(substitute(element, lookup));
    } else if type matches Generic(genericType) {

@@ -9,6 +9,12 @@ struct Enum {
     path: Path;
     generics: Generics;
     properties: Properties;
+    members: List<EnumEntry>;
+}
+
+struct EnumEntry {
+    name: string;
+    components: List<Type>;
 }
 
 struct Struct {
