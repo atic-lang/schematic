@@ -33,6 +33,38 @@ struct StaticFunction {
     output: Type;
 }
 
+struct RichFunction {
+    statement: Statement;
+    inputs: List<Variable>;
+    output: Type;
+    captures: List<Variable>;
+}
+
+fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
+    assertType(node, "richFunction");
+    //TODO test collisions
+    let inputs = newList<Variable>();
+    let inputVariable = newList<Variable>();
+    forEach(walk("declaration", "declarationList", node), fn (input: Node) -> void {
+        let name = id(input);
+        let typeNode = getNode(input, "type");
+        let variable = Variable(name, typeFromTree(typeNode, context), Location.Input(), Modifier.Final(), Optional.None<Variable>());
+        insert(inputs, variable);
+        insert(inputVariable, variable);
+    });
+    let returnType = typeFromTree(getNode(node, "type"), context);
+    let copyContext = contextCopy(context);
+
+    forEach(context.variables, fn (var: Variable) -> void {
+        insert(inputVariable, Variable(var.name, var.type, Location.Closure(), Modifier.Final(), Optional.Some(var)));
+    });
+    copyContext.variables = inputVariable;
+
+    let statement = statementFromNode(getNode(node, "statement"), copyContext);
+    //TODO usages
+
+    return RichFunction(statement, inputs, returnType, newList<Variable>());
+}
 
 struct Generics {
     types: List<GenericType>;

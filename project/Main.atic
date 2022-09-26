@@ -182,7 +182,7 @@ fn resolveFunctionHead(project: Project, unit: Unit) {
                     let inputName = id(inNode);
                     let type = getNode(inNode, "type");
                     let returnType_ = typeFromTree(type, fContext);
-                    let variable: Variable = Variable(inputName, returnType_, Location.Input(), Modifier.Final());
+                    let variable: Variable = Variable(inputName, returnType_, Location.Input(), Modifier.Final(), Optional.None<Variable>());
                     insert(inputs, variable);
                 });
                 let staticFunction: StaticFunction = StaticFunction(path, generics, properties, Optional.None<Statement>(), inputs, returnType);

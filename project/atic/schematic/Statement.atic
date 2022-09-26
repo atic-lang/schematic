@@ -2,6 +2,7 @@ use atic.schematic.Expression;
 use atic.schematic.Context;
 use atic.schematic.Member;
 use atic.schematic.Atic;
+use atic.schematic.Path;
 use atic.schematic.tokens.Node;
 use atic.schematic.type.Type;
 use atic.schematic.type.TypeSystem;
@@ -92,6 +93,41 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
     let stmt = statementFromNode(getNode(node, "statement"), context);
     let elseStmt = Statement.Block(BlockStatement(newList<Statement>()));
     let elsePart = getNode(node, "endOfBranch");
+    let typeFound = getExprType(expr);
+
+    let matchPart = getNode(node, "matches");
+    if typeFound matches Enum(enumImpl) {
+        if isPresent(matchPart, "nChain") {
+            let chainNode = getNode(matchPart, "nChain");
+            let path = newPathNode(chainNode);
+            let optionName = path.path;
+            let find: Optional<EnumEntry> = findAny(enumImpl.type.members, fn (entry: EnumEntry) -> bool {
+                return entry.name == optionName;
+            });
+            if find matches None() {
+                throw AssertError("could not find enum entry for name " + optionName);
+            } else matches Some(enumEntry) {
+                let names = newList<string>();
+                forEach(walk("id", "idList", matchPart), fn (inName: Node) -> void {
+                    let name = id(inName);
+                    insert(names, name);
+                });
+                let lookup = createLookupEnum(enumImpl);
+                let types = newList<Type>();
+                forEach(enumEntry.components, fn (type: Type) -> void {
+                    insert(types, substitute(type, lookup));
+                });
+
+            }
+        } else throw AssertError("expected a match expression");
+    }
+
+
+
+    if !testTypes(Type.Primitive("bool"), typeFound , emptyQuery()) {
+        throw AssertError("branch just accepts a bool or an enum with a match expression");
+    }
+
     if isPresent(elsePart, "elseStatement") {
         let elseBranch = getNode(elsePart, "elseStatement");
         elseStmt = statementFromNode(getNode(elseBranch, "statement"), context);
@@ -144,7 +180,7 @@ fn definitionFromTree(node: Node, context: Context) -> DeclarationStatement {
         typeOfDecl = foundType;
     }
 
-    let variable: Variable = Variable(nameOfDef, typeOfDecl, Location.Local(), Modifier.Variable());
+    let variable: Variable = Variable(nameOfDef, typeOfDecl, Location.Local(), Modifier.Variable(), Optional.None<Variable>());
     if isConst {
         variable.modifier = Modifier.Final();
     }

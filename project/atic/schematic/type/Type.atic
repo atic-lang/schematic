@@ -173,3 +173,21 @@ fn createLookup(structImpl: StructImpl) -> Map<GenericType, Type> {
 
     return map;
 }
+fn createLookupEnum(enumImpl: EnumImpl) -> Map<GenericType, Type> {
+    let map = newMap<GenericType, Type>();
+    let listA = enumImpl.type.generics.types;
+    let listB = enumImpl.implementation;
+    if listA.size != listB.size {
+        throw AssertError("incompatible generic size");
+    }
+    let i: number = 0;
+    let s: number = listA.size;
+    while i < s {
+        let implType = getAt(listB,i);
+        let next = getAt(listA,i);
+        put(map, next, implType);
+        i = i + 1;
+    }
+
+    return map;
+}

@@ -1,6 +1,7 @@
 use atic.schematic.Member;
 use atic.schematic.type.Type;
 use atic.schematic.type.TypeSystem;
+use atic.schematic.type.StaticTypes;
 use atic.schematic.Context;
 use atic.schematic.tokens.Tokenizer;
 use atic.schematic.tokens.Node;
@@ -8,7 +9,7 @@ use atic.schematic.Atic;
 
 enum Expression {
     Bool(BoolExpression);
-    Object(Complex);
+    Function(RichFunction);
 }
 
 enum BoolExpression {
@@ -51,8 +52,13 @@ fn exprFromNode(node: Node, context: Context) -> Expression {
     if isPresent(node, "boolArithmetic") {
         let boolExpr = boolFromNode(getNode(node,"boolArithmetic"),context);
         return Expression.Bool(boolExpr);
-    } else if isPresent(node, "boolArithmetic") {
-
+    } else if isPresent(node, "function") {
+        let functionNode = getNode(node, "function");
+        if isPresent(functionNode, "richFunction") {
+            let func = getNode(functionNode, "richFunction");
+            let richFunctionObj = richFunctionFromNode(func, context);
+            return Expression.Function(richFunctionObj);
+        } else throw AssertError("anon function not supported");
     }
     throw AssertError("not impl for complex");
 }
@@ -215,8 +221,13 @@ fn factorFromTree(node: Node, context: Context) -> Factor {
 fn getExprType(expression: Expression) -> Type {
     if expression matches Bool(boolExpr) {
         return getBoolExprType(boolExpr);
+    } else matches Function(richFunction) {
+        let argList = newList<Type>();
+        forEach(richFunction.inputs, fn (var: Variable) -> void {
+            insert(argList, var.type);
+        });
+        return Type.Function(FunctionType(argList, richFunction.output, Generics(newList<GenericType>())));
     }
-    throw NotImplError();
 }
 
 fn getBoolExprType(expr: BoolExpression) -> Type {
