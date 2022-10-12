@@ -140,12 +140,15 @@ fn resolveMembers(project: Project, unit: Unit) {
         forEachBI(unit.enums, fn (enum_: Enum, node: Node) -> void {
             let members = newList<EnumEntry>();
             let context = Context(environment, newList<Variable>(), enum_.generics, Type.Primitive("void"));
+            let indexRef = Ref(0);
             forEachI(walk("enumEntry", "enumEntries", node), fn (entry: Node, index: number) -> void {
                 let typeList = typeListFromTree(getNode(entry, "typeList"), context);
+                let index = indexRef.value;
                 let name = id(entry);
                 //TODO collisions
-                let enumEntry = EnumEntry(name, typeList);
+                let enumEntry = EnumEntry(name, index, typeList);
                 insert(members, enumEntry);
+                indexRef.value = index + 1;
             });
             enum_.members = members;
         });

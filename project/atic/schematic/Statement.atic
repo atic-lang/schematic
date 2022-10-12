@@ -6,6 +6,7 @@ use atic.schematic.Path;
 use atic.schematic.tokens.Node;
 use atic.schematic.type.Type;
 use atic.schematic.type.TypeSystem;
+use atic.schematic.type.StaticTypes;
 
 enum Statement {
     Block(BlockStatement);
@@ -90,11 +91,10 @@ fn assignFromTree(node: Node, context: Context) -> AssignStatement {
 fn branchFromTree(node: Node, context: Context) -> BranchStatement {
     assertType(node, "branchStatement");
     let expr = exprFromNode(getNode(node, "expression"),context);
-    let stmt = statementFromNode(getNode(node, "statement"), context);
+    let typeFound = getExprType(expr);
     let elseStmt = Statement.Block(BlockStatement(newList<Statement>()));
     let elsePart = getNode(node, "endOfBranch");
-    let typeFound = getExprType(expr);
-
+    let flag = false;
     let matchPart = getNode(node, "matches");
     if typeFound matches Enum(enumImpl) {
         if isPresent(matchPart, "nChain") {
@@ -117,11 +117,80 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                 forEach(enumEntry.components, fn (type: Type) -> void {
                     insert(types, substitute(type, lookup));
                 });
+                if types.size != names.size {
+                    throw AssertError("expected " + toString(types.size) + " number of arguments");
+                }
+                let copyContext = contextCopy(context);
 
+                forEachI(types, fn (type: Type, index: number) -> void {
+                    let name: string = getAt(names, index);
+                    let variable = Variable(name, type, Location.Match(), Modifier.Final(), Optional.None<Variable>());
+                    insert(copyContext.variables, variable);
+                });
+
+                let stmt = statementFromNode(getNode(node, "statement"), copyContext);
+
+                if isPresent(elsePart, "elseStatement") {
+                    let elseBranch = getNode(elsePart, "elseStatement");
+                    let elseMatches = getNode(elseBranch, "matches");
+                    if isPresent(elseMatches, "nChain") {
+                        let otherChainNode = getNode(elseMatches, "nChain");
+                        let otherPath = newPathNode(otherChainNode);
+                        let otherOptionName = otherPath.path;
+                        let otherFind: Optional<EnumEntry> = findAny(enumImpl.type.members, fn (entry: EnumEntry) -> bool {
+                            return entry.name == otherOptionName;
+                        });
+                        if otherFind matches None() {
+                            throw AssertError("could not find else enum entry for name " + optionName);
+                        } else matches Some(elseMatch) {
+
+                            if elseMatch.index == enumEntry.index {
+                                throw AssertError("else match part matches with if part");
+                            } else {
+                                let copyContext3 = contextCopy(context);
+                                flag = true;
+
+                                let otherNames = newList<string>();
+                                forEach(walk("id", "idList", elseMatches), fn (inName: Node) -> void {
+                                    let name = id(inName);
+                                    insert(otherNames, name);
+                                });
+                                let otherLookup = createLookupEnum(enumImpl);
+                                let otherTypes = newList<Type>();
+                                forEach(elseMatch.components, fn (type: Type) -> void {
+                                    insert(types, substitute(type, otherLookup));
+                                });
+
+                                if otherTypes.size != otherNames.size {
+                                    throw AssertError("expected " + toString(types.size) + " number of arguments");
+                                }
+
+                                forEachI(otherTypes, fn (type: Type, index: number) -> void {
+                                    let name: string = getAt(otherNames, index);
+                                    let variable = Variable(name, type, Location.Match(), Modifier.Final(), Optional.None<Variable>());
+                                    insert(copyContext.variables, variable);
+                                });
+
+                                elseStmt = statementFromNode(getNode(elseBranch, "statement"), copyContext3);
+                            }
+
+                        }
+                    }
+                    if !flag {
+                        let copyContext3 = contextCopy(context);
+                        elseStmt = statementFromNode(getNode(elseBranch, "statement"), copyContext3);
+                        flag = true;
+                    }
+                }
+
+                return BranchStatement(expr, stmt, elseStmt);
             }
         } else throw AssertError("expected a match expression");
     }
-
+    if !flag {
+        let copyContext4 = contextCopy(context);
+        let stmt = statementFromNode(getNode(node, "statement"), copyContext4);
+    }
 
 
     if !testTypes(Type.Primitive("bool"), typeFound , emptyQuery()) {

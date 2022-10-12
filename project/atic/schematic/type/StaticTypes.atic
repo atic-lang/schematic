@@ -14,6 +14,7 @@ struct Enum {
 
 struct EnumEntry {
     name: string;
+    index: number;
     components: List<Type>;
 }
 
