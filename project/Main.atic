@@ -16,12 +16,12 @@ fn Main() {
     insert(defaultImports, Path("Core"));
     let project: Project = Project(
         newMap<string,PathEntry>(),
-        "res/res2",
+        "C:/Users/Moritz/Documents/Projects/java/atic/res/res2",
         newList<Unit>(),
         ["atic"],
         defaultImports
     );
-    let src: string = loadFile("res/res2/testGrammar.txt");
+    let src: string = loadFile("C:/Users/Moritz/Documents/Projects/java/atic/res/res2/testGrammar.txt");
     let ruleSet = generateRuleSet(split(src,"\n"));
     src = "";
     compileProject(project,ruleSet);
@@ -143,12 +143,12 @@ fn resolveMembers(project: Project, unit: Unit) {
             let indexRef = Ref(0);
             forEachI(walk("enumEntry", "enumEntries", node), fn (entry: Node, index: number) -> void {
                 let typeList = typeListFromTree(getNode(entry, "typeList"), context);
-                let index = indexRef.value;
+                let index_ = indexRef.value;
                 let name = id(entry);
                 //TODO collisions
-                let enumEntry = EnumEntry(name, index, typeList);
+                let enumEntry = EnumEntry(name, index_, typeList);
                 insert(members, enumEntry);
-                indexRef.value = index + 1;
+                indexRef.value = index_ + 1;
             });
             enum_.members = members;
         });

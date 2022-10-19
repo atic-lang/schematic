@@ -93,6 +93,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
     let expr = exprFromNode(getNode(node, "expression"),context);
     let typeFound = getExprType(expr);
     let elseStmt = Statement.Block(BlockStatement(newList<Statement>()));
+    let stmt = Statement.Block(BlockStatement(newList<Statement>()));
     let elsePart = getNode(node, "endOfBranch");
     let flag = false;
     let matchPart = getNode(node, "matches");
@@ -128,7 +129,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                     insert(copyContext.variables, variable);
                 });
 
-                let stmt = statementFromNode(getNode(node, "statement"), copyContext);
+                stmt = statementFromNode(getNode(node, "statement"), copyContext);
 
                 if isPresent(elsePart, "elseStatement") {
                     let elseBranch = getNode(elsePart, "elseStatement");
@@ -189,7 +190,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
     }
     if !flag {
         let copyContext4 = contextCopy(context);
-        let stmt = statementFromNode(getNode(node, "statement"), copyContext4);
+        stmt = statementFromNode(getNode(node, "statement"), copyContext4);
     }
 
 
