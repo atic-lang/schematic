@@ -5,10 +5,12 @@ use atic.schematic.tokens.Node;
 use atic.schematic.tokens.Tokenizer;
 use atic.schematic.type.StaticTypes;
 use atic.schematic.type.Type;
+use atic.schematic.type.TypeSystem;
 use atic.schematic.lexer.GrammarReader;
 use atic.schematic.lexer.Lexer;
 use atic.schematic.Context;
 use atic.schematic.Statement;
+use atic.schematic.Expression;
 
 
 fn Main() {
@@ -204,8 +206,70 @@ fn resolveFunctionBody(project: Project, unit: Unit) {
             let list: List<Variable> = newList<Variable>();
             addAll(list,function.inputs);
             let context = Context(environment, list, function.generics, function.output);
-            let statement = blockFromTree(node, context);
+            let statement = Statement.Block(blockFromTree(node, context));
+            if !function.properties.isNative {
+                let returning = testForReturns(statement, false);
+                if !returning {
+                    if testTypes(Type.Primitive("void"), function.output, emptyQuery()) {
+                        let emptyReturn = Statement.Return(ReturnStatement(Optional.None<Expression>()));
+                        //fixes returns for later
+                        if statement matches Block(blockStatement) {
+                            insert(blockStatement.list, emptyReturn);
+                        } else {
+                            let emptyBlock = BlockStatement(newList<Statement>());
+                            insert(emptyBlock.list, statement);
+                            insert(emptyBlock.list, emptyReturn);
+                            statement = Statement.Block(emptyBlock);
+                        }
+                    } else {
+                        throw AssertError("incomplete code branching for function " + function.path.path);
+                    }
+                }
+            }
+            function.statement = Optional.Some(statement);
         });
+    }
+}
+
+fn testForReturns(statement: Statement, allowEarlyReturns: bool) -> bool {
+    match statement {
+        Block(blockStatement) -> {
+            let i: number = 0;
+            let s: number = blockStatement.list.size;
+            while i < s {
+                let isLast = i == s - 1;
+                let element: Statement = getAt(blockStatement.list,i);
+                let doesReturn = testForReturns(element, allowEarlyReturns);
+                if doesReturn && !isLast && !allowEarlyReturns {
+                    throw AssertError("returning before the last Statement");
+                }
+                if isLast {
+                    return doesReturn;
+                }
+                i = i + 1;
+            }
+            return false;
+        }
+        Assign(assignStatement) -> {
+            return false;
+        }
+        Branch(branchStatement) -> {
+             let trueCase = testForReturns(branchStatement.thenStatement, allowEarlyReturns);
+             let falseCase = testForReturns(branchStatement.elseStatement, allowEarlyReturns);
+             return trueCase && falseCase;
+        }
+        Declaration(declarationStatement) -> {
+            return false;
+        }
+        Return(returnStatement) -> {
+            return true;
+        }
+        Single(singleStatement) -> {
+            return false;
+        }
+        While(whileStatement) -> {
+            return false;
+        }
     }
 }
 

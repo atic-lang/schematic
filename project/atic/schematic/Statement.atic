@@ -209,7 +209,10 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
 fn whileFromTree(node: Node, context: Context) -> WhileStatement {
     assertType(node, "whileStatement");
     let expr = exprFromNode(getNode(node, "expression"),context);
-    let stmt = statementFromNode(getNode(node, "statement"), context);
+    let conditionType = getExprType(expr);
+    assertExprType(Type.Primitive("bool"), conditionType, "while condition not a bool");
+    let copyContext = contextCopy(context);
+    let stmt = statementFromNode(getNode(node, "statement"), copyContext);
     return WhileStatement(expr, stmt);
 }
 

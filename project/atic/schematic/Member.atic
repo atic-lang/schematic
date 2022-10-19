@@ -160,10 +160,6 @@ fn memberFromTree(node: Node, context: Context) -> Member {
     }
 }
 
-fn MemberType(member: Member, context: Context) -> Result<Type,AticError> {
-   // return Result.Ok<Type,AticError>(Type.Primitive(-1));
-   throw NotImplError();
-}
 
 enum CallableType {
     Function(FunctionType);
