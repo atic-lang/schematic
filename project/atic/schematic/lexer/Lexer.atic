@@ -26,8 +26,6 @@ fn reverseRule(ruleSet: RuleSet, entry: string, records: List<TokenRecord>) -> N
 }
 
 
-
-
 fn testRule(rule: Rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
     let list = rule.sentences;
     let i: number = 0;

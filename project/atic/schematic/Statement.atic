@@ -10,16 +10,29 @@ use atic.schematic.type.StaticTypes;
 
 enum Statement {
     Block(BlockStatement);
+    Throw(ThrowStatement);
     Assign(AssignStatement);
     Branch(BranchStatement);
     Declaration(DeclarationStatement);
     Return(ReturnStatement);
     Single(SingleStatement);
     While(WhileStatement);
+    Match(MatchStatement);
 }
 
 struct BlockStatement {
     list: List<Statement>
+}
+
+struct ThrowStatement {
+    struct_: Struct;
+    arguments: List<Expression>;
+}
+
+struct MatchStatement {
+    expression: Expression;
+    definition: EnumImpl;
+    statements: Map<EnumEntry, Statement>;
 }
 
 struct AssignStatement {
@@ -72,9 +85,91 @@ fn statementFromNode(node: Node, context: Context) -> Statement {
         let memberChild = getNode(child_, "member");
         let member = memberFromTree(memberChild, context)
         return Statement.Single(SingleStatement(member));
+    } else if name == "throwStatement" {
+        return Statement.Throw(throwFromTree(child_, context));
+    } else if name == "matchStatement" {
+        return Statement.Match(matchFromTree(child_, context));
     }
 
     throw AssertError(name + " is not impl");
+}
+
+fn matchFromTree(node: Node, context: Context) -> MatchStatement {
+    assertType(node, "matchStatement");
+    let expr = exprFromNode(getNode(node, "expression"),context);
+    let typeFound = getExprType(expr);
+
+    if typeFound matches Enum(enumImpl) {
+        let statementMap = newMap<EnumEntry, Statement>();
+
+        forEach(walk("matchEntry", "matchEntries", node), fn (entry: Node) -> void {
+            let path = newPathNode(getNode(entry, "nChain"));
+            let optionName = path.path;
+            let find: Optional<EnumEntry> = findAny(enumImpl.type.members, fn (enumEntry: EnumEntry) -> bool {
+                return enumEntry.name == optionName;
+            });
+
+            if find matches None() {
+                throw AssertError("could not find enum entry for name " + optionName);
+            } else matches Some(enumEntry) {
+                let names = newList<string>();
+                forEach(walk("id", "idList", entry), fn (inName: Node) -> void {
+                    let name = id(inName);
+                    insert(names, name);
+                });
+                let lookup = createLookupEnum(enumImpl);
+                let types = newList<Type>();
+                forEach(enumEntry.components, fn (type: Type) -> void {
+                    insert(types, substitute(type, lookup));
+                });
+                if types.size != names.size {
+                    throw AssertError("expected " + toString(types.size) + " number of arguments");
+                }
+                let copyContext = contextCopy(context);
+                let newVariables = newList<Variable>();
+                forEachI(types, fn (type: Type, index: number) -> void {
+                    let name: string = getAt(names, index);
+                    let variable = Variable(name, type,Location.Match(), Modifier.Final(), 
+                                                                 Optional.None<Variable>());
+                    insert(copyContext.variables, variable);
+                    insert(newVariables, variable);
+                });
+
+                if get(statementMap, enumEntry) matches Some(unused) {
+                    throw AssertError(optionName + " does already exist in this match");
+                }
+
+                let stmt = statementFromNode(getNode(entry, "statement"), copyContext);
+                put(statementMap, enumEntry, stmt);
+            }
+
+        });
+
+        return MatchStatement(expr, enumImpl, statementMap)
+    } else {
+        throw AssertError("only match an enum ");
+    }
+}
+
+fn throwFromTree(node: Node, context: Context) -> ThrowStatement {
+    assertType(node, "throwStatement");
+    let path = newPathNode(getNode(node, "nChain"));
+    let query = askFor(context, path);
+    if query matches None() {
+        throw AssertError("cant find " + path.path);
+    } else matches Some(queryObj) {
+        if queryObj matches Interface(mStruct) {
+            if !mStruct.properties.isException {
+                throw AssertError("struct has to be marked as exception");
+            }
+            
+            let call: CallAccess = callAccess(CallableType.Struct(mStruct), getNode(node,"callAccess"), context);
+            return ThrowStatement(mStruct, call.arguments);
+            
+        } else {
+            throw AssertError("cant find struct " + path.path);
+        }
+    }
 }
 
 fn assignFromTree(node: Node, context: Context) -> AssignStatement {
