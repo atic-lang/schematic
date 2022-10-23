@@ -1,0 +1,210 @@
+use atic.schematic.project.Project;
+use atic.schematic.Path;
+use atic.schematic.Atic;
+use atic.schematic.tokens.Node;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.type.StaticTypes;
+use atic.schematic.type.Type;
+use atic.schematic.type.TypeSystem;
+use atic.schematic.lexer.GrammarReader;
+use atic.schematic.compiler.Commands;
+use atic.schematic.lexer.Lexer;
+use atic.schematic.Context;
+use atic.schematic.Statement;
+use atic.schematic.Expression;
+
+
+struct CompiledProject {
+    project: Project;
+}
+
+fn compileProject(project: Project, outFile: string) -> CompiledProject {
+
+    forEach(project.units, fn (ref: Unit) -> void {
+        compileUnit(ref, outFile);
+    });
+
+    return CompiledProject(project);
+}
+
+fn compileUnit(unit: Unit, outFile: string) {
+    let pathStr = unit.path.path;
+    let toFilePath = outFile + "/" + replace(pathStr, ".", "/") + ".txt";
+    let lines = newList<string>();
+
+    forEachBI(unit.functions, fn (function: StaticFunction, unused: Node) -> void {
+        let instructions = compileFunction(function);
+        insert(lines, function.path.path + ":");
+        forEach(instructions, fn(instruction: Instruction) -> void  {
+            let toString = instructionDebugString(instruction);
+            insert(lines, "\t" + toString);
+        }); 
+
+        insert(lines, "\n");
+    });
+    let dbgStr = Ref("");
+    forEach(lines, fn (line: string) -> void {
+        dbgStr.value = dbgStr.value + line + "\n";
+    });
+
+    saveFile(toFilePath, dbgStr.value);
+}
+struct AsmObj {
+    registers: Map<Variable,number>;
+    instructions: List<Instruction>;
+    usedRegisters: number
+}
+
+fn compileFunction(function: StaticFunction) -> List<Instruction> {
+    let list = newList<Instruction>();
+    let registerMap = newMap<Variable,number>(); 
+    let info = AsmObj(registerMap, list, 0);
+    if function.statement matches Some(statement) {
+        compileStatement(statement, info);
+    } else {
+        throw AssertError("cant find statement for compiling");
+    }
+    return list;
+}
+
+fn compileStatement(statement: Statement, info: AsmObj) {
+    match statement {
+        Block(blockStatement) -> {
+            forEach(blockStatement.list, fn (subStatement: Statement) -> void {
+                compileStatement(subStatement, info);
+            });
+        }
+        Assign(assignStatement) -> {
+            
+        }
+        Branch(branchStatement) -> {
+        }
+        Declaration(declarationStatement) -> {
+            let expr = declarationStatement.expression;
+            let target = compileExpression(expr, info);
+            put(info.registers, declarationStatement.variable, target);
+        }
+        Return(returnStatement) -> {
+        }
+        Single(singleStatement) -> {
+        }
+        While(whileStatement) -> {
+        } 
+        Throw(throwStatement) -> {
+        }
+        Match(matchStatement) -> {
+        }
+    }
+}
+
+fn compileExpression(expression: Expression, info: AsmObj) -> number {
+    if expression matches Bool(boolExpr) {
+        return compileBoolExpression(boolExpr, info);
+    }
+    throw AssertError("not impl");
+}
+
+fn compileBoolExpression(boolExpr: BoolExpression, info: AsmObj) -> number {
+    if boolExpr matches Implemented(nextExpr, operator, selfExpr) {
+        let right = compileBoolExpression(selfExpr, info);
+        let left = compileComparisonExpression(nextExpr, info);
+        let target = useRegister(info);
+        insert(info.instructions, commandFromOperator(target, left, right, operator));
+        return target;
+    } else matches Normal(nextExpr) {
+        return compileComparisonExpression(nextExpr, info);
+    }
+}
+
+fn compileComparisonExpression(compExpr: ComparisonExpression, info: AsmObj) -> number {
+    if compExpr matches Implemented(nextExpr, operator, selfExpr) {
+        let right = compileComparisonExpression(selfExpr, info);
+        let left = compileArithmeticExpression(nextExpr, info);
+        let target = useRegister(info);
+        insert(info.instructions, commandFromOperator(target, left, right, operator));
+        return target;
+    } else matches Normal(nextExpr) {
+        return compileArithmeticExpression(nextExpr, info);
+    }
+}
+
+fn compileArithmeticExpression(ariExpr: ArithmeticExpression, info: AsmObj) -> number {
+    if ariExpr matches Implemented(nextExpr, operator, selfExpr) {
+        let right = compileArithmeticExpression(selfExpr, info);
+        let left = compileTerm(nextExpr, info);
+        let target = useRegister(info);
+        insert(info.instructions, commandFromOperator(target, left, right, operator));
+        return target;
+    } else matches Normal(nextExpr) {
+        return compileTerm(nextExpr, info);
+    }
+}
+
+fn compileTerm(ariExpr: Term, info: AsmObj) -> number {
+    if ariExpr matches Implemented(nextExpr, operator, selfExpr) {
+        let right = compileTerm(selfExpr, info);
+        let left = compileFactor(nextExpr, info);
+        let target = useRegister(info);
+        insert(info.instructions, commandFromOperator(target, left, right, operator));
+        return target;
+    } else matches Normal(nextExpr) {
+        return compileFactor(nextExpr, info);
+    }
+}
+
+fn compileFactor(factor: Factor, info: AsmObj) -> number {
+    match factor {  
+        Expression(expr) -> {
+            return compileExpression(expr, info);
+        }
+        Number(num) -> {
+            let target = useRegister(info);
+            insert(info.instructions, Instruction.LoadConst(target, num));
+            return target;
+        }
+        BoolLiteral(boolean) -> {
+            let target = useRegister(info);
+            if boolean {
+                insert(info.instructions, Instruction.LoadConst(target, 1));
+            } else {
+                insert(info.instructions, Instruction.LoadConst(target, 0));
+            }
+            return target;
+        }
+        Not(subFactor) -> {
+            let factorF = compileFactor(subFactor, info); 
+            let target = useRegister(info);
+            insert(info.instructions, Instruction.Not(target, factorF));
+            return target;
+        }
+        NegUnary(subFactor) -> {
+            let factorF = compileFactor(subFactor, info); 
+            let target = useRegister(info);
+            insert(info.instructions, Instruction.Negate(target, factorF));
+            return target;
+        }
+        String(str) -> {
+            let target = useRegister(info);
+            insert(info.instructions, Instruction.LoadString(target, str));
+            return target;
+        }
+        Member(member) -> {
+            if member.type matches Local(var, accessList) {
+                let option = get(info.registers, var);
+                if option matches Some(target) {
+                    return target;
+                } else matches None() {
+                    throw AssertError("cant find variable");
+                }
+            }
+            throw AssertError("member not implemented");
+        }
+    }
+}
+
+
+fn useRegister(info: AsmObj) -> number {
+    let current = info.usedRegisters + 1;
+    info.usedRegisters = current;
+    return current;
+}

@@ -179,7 +179,9 @@ fn termFromTree(node: Node, context: Context) -> Term {
 
 fn factorFromTree(node: Node, context: Context) -> Factor {
     if isPresent(node, "number") {
-        return Factor.Number(0);
+        let expr = getNode(node, "number");
+        let str: string = child(expr).record.data;
+        return Factor.Number(stringToNumber(str));
     } else if isPresent(node, "boolArithmetic") {
         let expr = getNode(node, "boolArithmetic");
         return Factor.Expression(Expression.Bool(boolFromNode(expr, context)));

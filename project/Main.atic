@@ -7,6 +7,7 @@ use atic.schematic.type.StaticTypes;
 use atic.schematic.type.Type;
 use atic.schematic.type.TypeSystem;
 use atic.schematic.lexer.GrammarReader;
+use atic.schematic.compiler.Compiler;
 use atic.schematic.lexer.Lexer;
 use atic.schematic.Context;
 use atic.schematic.Statement;
@@ -26,14 +27,16 @@ fn Main() {
     let src: string = loadFile("C:/Users/Moritz/Documents/Projects/java/atic/res/res2/testGrammar.txt");
     let ruleSet = generateRuleSet(split(src,"\n"));
     src = "";
-    compileProject(project,ruleSet);
+    lexAndCheckProject(project,ruleSet);
+    compileProject(project, "C:/Users/Moritz/Documents/Projects/java/atic/res/res2/out");
 }
 
-fn compileProject(project: Project, rules: RuleSet) {
+fn lexAndCheckProject(project: Project, rules: RuleSet) {
     let files: List<string> = newList<string>();
     forFile(project.file,files);
 
     let units: List<Unit> = newList<Unit>();
+    project.units = units;
     forEach(files, fn (ref: string) -> void {
         project;
         if containsArray(project.extensions, getExtension(ref)) {
