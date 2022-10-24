@@ -108,7 +108,7 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
             let find: Optional<EnumEntry> = findAny(enumImpl.type.members, fn (enumEntry: EnumEntry) -> bool {
                 return enumEntry.name == optionName;
             });
-
+            
             if find matches None() {
                 throw AssertError("could not find enum entry for name " + optionName);
             } else matches Some(enumEntry) {

@@ -21,8 +21,19 @@ enum Instruction {
     Copy(number, number); //Register Target, Register Source;
     Not(number, number); //Register Target, Register Source;
     Negate(number, number); //Register Target, Register Source;
-    LoadString(number, string); //Register Target, Register Source;
+    LoadString(number, string); //Register Target, string source;
+    LoadFunction(number, string); //Register Target, function path;
+    Argument(number, number); //argument index, src register 
+    InvokeFunction(number, number); //return Register, function register;
+    Return(number); //return Register;
+    JumpIfNot(number, number); //test Register, Jump label;
+    Jump(number); //Jump label;
 
+    LoadMember(number, number, number); //target register, member register, member offset;
+    LoadArray(number, number, number); //target register, array register, offset register;
+    StoreMember(number, number, number); //src register, member register, member offset;
+    
+    CreateStruct(number, string, number); //target register, path, size
 
     Add(number, number, number); //Register Target, Register A, Register B;
     Subtract(number, number, number); //Register Target, Register A, Register B;
@@ -43,8 +54,38 @@ fn instructionDebugString(instruction: Instruction) -> string {
         Debug(reg) -> {
             return "Debug $" + toString(reg);
         }
+        CreateStruct(target, path, size) -> {
+            return "CreateStruct $" + toString(target) + " = " + path + "(" + toString(size) + ")";
+        }
+        LoadMember(target, member, offset) -> {
+            return "LoadMember $" + toString(target) + " = $" + toString(member) + "[" + toString(offset) + "]";
+        }
+        LoadArray(target, array, offset) -> {
+            return "LoadArray $" + toString(target) + " = $" + toString(array) + "[$" + toString(offset) + "]";
+        }
+        StoreMember(src, member, offset) -> {
+            return "StoreMember " + toString(member) + "[" + toString(offset) + "] = $" + toString(src);
+        }
         LoadConst(target, constant) -> {
             return "LoadConst $" + toString(target) + " = " + toString(constant);
+        }
+        JumpIfNot(test, label) -> {
+            return "JumpIfNot $" + toString(test) + " #" + toString(label);
+        }
+        Jump(label) -> {
+            return "Jump #" + toString(label);
+        }
+        LoadFunction(target, path) -> {
+            return "LoadFunction $" + toString(target) + " = " + path;
+        }
+        Return(src) -> {
+            return "Return $" + toString(src);
+        }
+        InvokeFunction(returnAdress, register) -> {
+            return "InvokeFunction $" + toString(returnAdress) + " = " + toString(register)+ "()";
+        }
+        Argument(index, register) -> {
+            return "Argument (" + toString(index) + ") = $" + toString(register);
         }
         Copy(target, src) -> {
             return "Copy $" + toString(target) + " = $" + toString(src);
@@ -56,7 +97,7 @@ fn instructionDebugString(instruction: Instruction) -> string {
             return "Negate $" + toString(target) + " = - $" + toString(src);
         }
         LoadString(target, src) -> {
-            return "LoadString $" + toString(target) + " = \"" + toString(src) + "\"";
+            return "LoadString $" + toString(target) + " = \"" + src + "\"";
         }
         Add(target, a, b) -> {
             return "Add $" + toString(target) + " = $" + toString(a) + " + $" + toString(b);
@@ -93,6 +134,96 @@ fn instructionDebugString(instruction: Instruction) -> string {
         }
         NonEquals(target, a, b) -> {
             return "NonEquals $" + toString(target) + " = $" + toString(a) + " != $" + toString(b);
+        }
+    }
+}
+
+
+fn instructionCode(instruction: Instruction) -> string {
+    match instruction {
+        Debug(reg) -> {
+            return "Debug: " + toString(reg);
+        }
+        CreateStruct(target, path, size) -> {
+            return "CreateStruct: " + toString(target) + ", " + path + ", " + toString(size);
+        }
+        LoadConst(target, constant) -> {
+            return "LoadConst: " + toString(target) + ", " + toString(constant);
+        }
+        JumpIfNot(test, label) -> {
+            return "JumpIfNot: " + toString(test) + ", " + toString(label);
+        }
+        LoadMember(target, member, offset) -> {
+            return "LoadMember: " + toString(target) + ", " + toString(member) + ", " + toString(offset);
+        }
+        LoadArray(target, array, offset) -> {
+            return "LoadArray: " + toString(target) + ", " + toString(array) + ", " + toString(offset);
+        }
+        StoreMember(src, member, offset) -> {
+            return "StoreMember: " + toString(member) + ", " + toString(offset) + ", " + toString(src);
+        }
+        Jump(label) -> {
+            return "Jump: " + toString(label);
+        }
+        LoadFunction(target, path) -> {
+            return "LoadFunction: " + toString(target) + ", " + path;
+        }
+        Return(src) -> {
+            return "Return: " + toString(src);
+        }
+        InvokeFunction(returnAdress, register) -> {
+            return "InvokeFunction:" + toString(returnAdress) + ", \"" + toString(register) + "\"";
+        }
+        Argument(index, register) -> {
+            return "Argument: " + toString(index) + ", " + toString(register);
+        }
+        Copy(target, src) -> {
+            return "Copy: " + toString(target) + ", " + toString(src);
+        }
+        Not(target, src) -> {
+            return "Not: " + toString(target) + ", " + toString(src);
+        }
+        Negate(target, src) -> {
+            return "Negate: " + toString(target) + ", " + toString(src);
+        }
+        LoadString(target, src) -> {
+            return "LoadString: " + toString(target) + ", \"" + src + "\"";
+        }
+        Add(target, a, b) -> {
+            return "Add: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        Subtract(target, a, b) -> {
+            return "Subtract: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        Multiply(target, a, b) -> {
+            return "Multiply: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        Divide(target, a, b) -> {
+            return "Divide: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        Or(target, a, b) -> {
+            return "Or: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        And(target, a, b) -> {
+            return "And: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        Greater(target, a, b) -> {
+            return "Greater: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        GreaterEq(target, a, b) -> {
+            return "GreaterEq: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        Smaller(target, a, b) -> {
+            return "Smaller: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        SmallerEq(target, a, b) -> {
+            return "SmallerEq: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        Equals(target, a, b) -> {
+            return "Equals: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        NonEquals(target, a, b) -> {
+            return "NonEquals:" + toString(target) + ", " + toString(a) + ", " + toString(b);
         }
     }
 }
