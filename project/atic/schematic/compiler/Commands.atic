@@ -32,8 +32,10 @@ enum Instruction {
     LoadMember(number, number, number); //target register, member register, member offset;
     LoadArray(number, number, number); //target register, array register, offset register;
     StoreMember(number, number, number); //src register, member register, member offset;
+    StoreArray(number, number, number); //src register, array register, offset register;
     
     CreateStruct(number, string, number); //target register, path, size
+    CreateEnumEntry(number, number, number); //target register, enum index, enum size
 
     Add(number, number, number); //Register Target, Register A, Register B;
     Subtract(number, number, number); //Register Target, Register A, Register B;
@@ -54,6 +56,9 @@ fn instructionDebugString(instruction: Instruction) -> string {
         Debug(reg) -> {
             return "Debug $" + toString(reg);
         }
+        CreateEnumEntry(target, index, size) -> {
+            return "CreateEnumEntry $" + toString(target) + " = " + toString(index) + "(" + toString(size) + ")";
+        }
         CreateStruct(target, path, size) -> {
             return "CreateStruct $" + toString(target) + " = " + path + "(" + toString(size) + ")";
         }
@@ -64,7 +69,10 @@ fn instructionDebugString(instruction: Instruction) -> string {
             return "LoadArray $" + toString(target) + " = $" + toString(array) + "[$" + toString(offset) + "]";
         }
         StoreMember(src, member, offset) -> {
-            return "StoreMember " + toString(member) + "[" + toString(offset) + "] = $" + toString(src);
+            return "StoreMember $" + toString(member) + "[" + toString(offset) + "] = $" + toString(src);
+        }
+        StoreArray(src, array, offset) -> {
+            return "StoreArray $" + toString(array) + "[$" + toString(offset) + "] = $" + toString(src);
         }
         LoadConst(target, constant) -> {
             return "LoadConst $" + toString(target) + " = " + toString(constant);
@@ -82,7 +90,7 @@ fn instructionDebugString(instruction: Instruction) -> string {
             return "Return $" + toString(src);
         }
         InvokeFunction(returnAdress, register) -> {
-            return "InvokeFunction $" + toString(returnAdress) + " = " + toString(register)+ "()";
+            return "InvokeFunction $" + toString(returnAdress) + " = $" + toString(register)+ "()";
         }
         Argument(index, register) -> {
             return "Argument (" + toString(index) + ") = $" + toString(register);
@@ -144,8 +152,11 @@ fn instructionCode(instruction: Instruction) -> string {
         Debug(reg) -> {
             return "Debug: " + toString(reg);
         }
+        CreateEnumEntry(target, index, size) -> {
+            return "CreateEnumEntry: " + toString(target) + ", " + toString(index) + ", " + toString(size);
+        }
         CreateStruct(target, path, size) -> {
-            return "CreateStruct: " + toString(target) + ", " + path + ", " + toString(size);
+            return "CreateStruct: " + toString(target) + ", \"" + path + "\", " + toString(size);
         }
         LoadConst(target, constant) -> {
             return "LoadConst: " + toString(target) + ", " + toString(constant);
@@ -162,17 +173,20 @@ fn instructionCode(instruction: Instruction) -> string {
         StoreMember(src, member, offset) -> {
             return "StoreMember: " + toString(member) + ", " + toString(offset) + ", " + toString(src);
         }
+        StoreArray(src, array, offset) -> {
+            return "StoreArray: " + toString(array) + ", " + toString(offset) + ", " + toString(src);
+        }
         Jump(label) -> {
             return "Jump: " + toString(label);
         }
         LoadFunction(target, path) -> {
-            return "LoadFunction: " + toString(target) + ", " + path;
+            return "LoadFunction: " + toString(target) + ", \"" + path + "\"";
         }
         Return(src) -> {
             return "Return: " + toString(src);
         }
         InvokeFunction(returnAdress, register) -> {
-            return "InvokeFunction:" + toString(returnAdress) + ", \"" + toString(register) + "\"";
+            return "InvokeFunction:" + toString(returnAdress) + ", " + toString(register);
         }
         Argument(index, register) -> {
             return "Argument: " + toString(index) + ", " + toString(register);

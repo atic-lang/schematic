@@ -45,7 +45,7 @@ fn <T> forEachI(list: List<T>,consumer: fn(T, number) -> void) {
     }
 }
 
-fn <K,V> forEachBI(map: Map<K,V>,consumer: fn(K,V) -> void) {
+fn <K,V> forEachBI(map: Map<K,V>, consumer: fn(K,V) -> void) {
     let i: number = 0;
     let list: List<BIEntry<K,V>> = getEntries(map);
     let s: number = list.size;
@@ -80,7 +80,7 @@ fn <T> forEachWhile(list: List<T>,consumer: fn(T) -> bool) -> bool {
     return true;
 }
 
-fn <T> filter(list: List<T>,predicate: fn(T) -> bool) -> List<T> {
+fn <T> filter(list: List<T>, predicate: fn(T) -> bool) -> List<T> {
     let newLst: List<T> = newList<T>();
 
     let i: number = 0;
