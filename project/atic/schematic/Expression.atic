@@ -46,6 +46,86 @@ struct Complex {
 
 }
 
+fn expressionUsages(expression: Expression) -> List<Variable> {
+    if expression matches Bool(boolExpr) {
+        return boolUsages(boolExpr);
+    } else matches Function(func) {
+        return newList<Variable>();
+    }
+}
+
+fn boolUsages(expr: BoolExpression)  -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, comparisonExpressionUsage(next));
+        addAll(variables, boolUsages(same));
+    } else matches Normal(next) {
+        addAll(variables, comparisonExpressionUsage(next));
+    }
+    return variables;
+}
+
+fn comparisonExpressionUsage(expr: ComparisonExpression) -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, arithmeticExpressionUsage(next));
+        addAll(variables, comparisonExpressionUsage(same));
+    } else matches Normal(next) {
+        addAll(variables, arithmeticExpressionUsage(next));
+    }
+    return variables;
+}
+ 
+fn arithmeticExpressionUsage(expr: ArithmeticExpression) -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, termUsage(next));
+        addAll(variables, arithmeticExpressionUsage(same));
+    } else matches Normal(next) {
+        addAll(variables, termUsage(next));
+    }
+    return variables;
+}
+
+fn termUsage(expr: Term) -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, factorUsage(next));
+        addAll(variables, termUsage(same));
+    } else matches Normal(next) {
+        addAll(variables, factorUsage(next));
+    }
+    return variables;
+}
+
+fn factorUsage(expr: Factor) -> List<Variable> {
+    let variables = newList<Variable>();
+    match expr {
+        Expression(expression) -> {
+            addAll(variables, expressionUsages(expression));
+        }
+        Number(number) -> {
+            
+        }
+        BoolLiteral(bool) -> {
+
+        }
+        Not(factor) -> {
+            addAll(variables, factorUsage(factor));
+        }
+        NegUnary(factor) -> {
+            addAll(variables, factorUsage(factor));
+        }
+        String(string) -> {
+
+        }
+        Member(member) -> {
+            addAll(variables, memberUsages(member));
+        }
+    }
+    return variables;
+}
+
 
 fn exprFromNode(node: Node, context: Context) -> Expression {
     assertType(node,"expression");

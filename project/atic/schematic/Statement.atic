@@ -32,7 +32,12 @@ struct ThrowStatement {
 struct MatchStatement {
     expression: Expression;
     definition: EnumImpl;
-    statements: Map<EnumEntry, Statement>;
+    statements: Map<EnumEntry, MatchCase>;
+}
+
+struct MatchCase {
+    statement: Statement;
+    variables: List<Variable>;
 }
 
 struct AssignStatement {
@@ -100,7 +105,7 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
     let typeFound = getExprType(expr);
 
     if typeFound matches Enum(enumImpl) {
-        let statementMap = newMap<EnumEntry, Statement>();
+        let statementMap = newMap<EnumEntry, MatchCase>();
 
         forEach(walk("matchEntry", "matchEntries", node), fn (entry: Node) -> void {
             let path = newPathNode(getNode(entry, "nChain"));
@@ -140,7 +145,7 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
                 }
 
                 let stmt = statementFromNode(getNode(entry, "statement"), copyContext);
-                put(statementMap, enumEntry, stmt);
+                put(statementMap, enumEntry, MatchCase(stmt, newVariables));
             }
 
         });
@@ -148,6 +153,64 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
         return MatchStatement(expr, enumImpl, statementMap)
     } else {
         throw AssertError("only match an enum ");
+    }
+}
+
+
+
+fn statementUsages(statement: Statement) -> List<Variable> {
+    let variables = newList<Variable>();
+
+    match statement {
+        Block(blockStatement) -> {
+            forEach(blockStatement.list, fn (subStatement: Statement) -> void {
+                addAll(variables, statementUsages(subStatement));
+            });
+            return variables;
+        }
+        Throw(throwStatement) -> {
+            forEach(throwStatement.arguments, fn (expression: Expression) -> void {
+                addAll(variables, expressionUsages(expression));
+            });
+            return variables;
+        }
+        Assign(assignStatement) -> {
+            addAll(variables, expressionUsages(assignStatement.expression));
+            addAll(variables, memberUsages(assignStatement.member));
+            return variables;
+        }
+        Branch(branchStatement) -> {
+            addAll(variables, expressionUsages(branchStatement.expression));
+            addAll(variables, statementUsages(branchStatement.thenStatement));
+            addAll(variables, statementUsages(branchStatement.elseStatement));
+            return variables;
+        }
+        Declaration(declarationStatement) -> {
+            addAll(variables, expressionUsages(declarationStatement.expression));
+            return variables;
+        }
+        Return(returnStatement) -> {
+            if returnStatement.expression matches Some(expression) {
+                addAll(variables, expressionUsages(expression));
+            }
+            return variables;
+        }
+        Single(singleStatement) -> {
+            addAll(variables, memberUsages(singleStatement.member));
+            return variables;
+        }
+        While(whileStatement) -> {
+            addAll(variables, expressionUsages(whileStatement.expression));
+            addAll(variables, statementUsages(whileStatement.statement));
+            return variables;
+        }
+        Match(matchStatement) -> {
+            addAll(variables, expressionUsages(matchStatement.expression));
+            forEachBI(matchStatement.statements, fn (enum_: EnumEntry, matchCase: MatchCase) -> void {
+                addAll(variables, statementUsages(matchCase.statement));
+            });
+            return variables;
+        }
     }
 }
 

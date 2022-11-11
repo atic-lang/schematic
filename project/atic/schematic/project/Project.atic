@@ -18,6 +18,7 @@ struct Project {
     units: List<Unit>;
     extensions: lst string;
     defaultImports: List<Path>;
+    closures: List<RichFunction>;
 }
 
 fn getEntry(environment: Environment, path: Path) -> Optional<PathEntry> {

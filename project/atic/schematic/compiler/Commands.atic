@@ -33,7 +33,9 @@ enum Instruction {
 
     LoadEnumType(number, number); //target register, enum src
     LoadEnumMember(number, number, number); //target register, enum src, member offset;
-    
+    CopyEnumMember(number, number, number); //target register, enum src, enum size;
+
+    Match(number, number, Map<number, number>); //enum register, alternative jump target, target lookup
 
     LoadMember(number, number, number); //target register, member register, member offset;
     LoadArray(number, number, number); //target register, array register, offset register;
@@ -42,6 +44,10 @@ enum Instruction {
     
     CreateStruct(number, string, number); //target register, path, size
     CreateEnumEntry(number, number, number); //target register, enum index, enum size
+
+    CreateClosure(number, number, string); //register target, size ,closure path
+
+    Throw(number); //exception
 
     Add(number, number, number); //Register Target, Register A, Register B;
     Subtract(number, number, number); //Register Target, Register A, Register B;
@@ -57,109 +63,29 @@ enum Instruction {
     NonEquals(number, number, number); //Register Target, Register A, Register B;
 }
 
-fn instructionDebugString(instruction: Instruction) -> string {
-    match instruction {
-        Debug(reg) -> {
-            return "Debug $" + toString(reg);
-        }
-        CreateEnumEntry(target, index, size) -> {
-            return "CreateEnumEntry $" + toString(target) + " = " + toString(index) + "(" + toString(size) + ")";
-        }
-        CreateStruct(target, path, size) -> {
-            return "CreateStruct $" + toString(target) + " = " + path + "(" + toString(size) + ")";
-        }
-        LoadMember(target, member, offset) -> {
-            return "LoadMember $" + toString(target) + " = $" + toString(member) + "[" + toString(offset) + "]";
-        }
-        LoadArray(target, array, offset) -> {
-            return "LoadArray $" + toString(target) + " = $" + toString(array) + "[$" + toString(offset) + "]";
-        }
-        StoreMember(src, member, offset) -> {
-            return "StoreMember $" + toString(member) + "[" + toString(offset) + "] = $" + toString(src);
-        }
-        StoreArray(src, array, offset) -> {
-            return "StoreArray $" + toString(array) + "[$" + toString(offset) + "] = $" + toString(src);
-        }
-        LoadConst(target, constant) -> {
-            return "LoadConst $" + toString(target) + " = " + toString(constant);
-        }
-        Exit(code) -> {
-            return "Exit " + toString(code);
-        }
-        JumpIfNot(test, label) -> {
-            return "JumpIfNot $" + toString(test) + " #" + toString(label);
-        }
-        Jump(label) -> {
-            return "Jump #" + toString(label);
-        }
-        LoadFunction(target, path) -> {
-            return "LoadFunction $" + toString(target) + " = " + path;
-        }
-        Return(src) -> {
-            return "Return $" + toString(src);
-        }
-        InvokeFunction(returnAdress, register) -> {
-            return "InvokeFunction $" + toString(returnAdress) + " = $" + toString(register)+ "()";
-        }
-        Argument(index, register) -> {
-            return "Argument (" + toString(index) + ") = $" + toString(register);
-        }
-        Copy(target, src) -> {
-            return "Copy $" + toString(target) + " = $" + toString(src);
-        }
-        Not(target, src) -> {
-            return "Not $" + toString(target) + " = not $" + toString(src);
-        }
-        Negate(target, src) -> {
-            return "Negate $" + toString(target) + " = - $" + toString(src);
-        }
-        LoadString(target, src) -> {
-            return "LoadString $" + toString(target) + " = \"" + src + "\"";
-        }
-        Add(target, a, b) -> {
-            return "Add $" + toString(target) + " = $" + toString(a) + " + $" + toString(b);
-        }
-        Subtract(target, a, b) -> {
-            return "Subtract $" + toString(target) + " = $" + toString(a) + " - $" + toString(b);
-        }
-        Multiply(target, a, b) -> {
-            return "Multiply $" + toString(target) + " = $" + toString(a) + " * $" + toString(b);
-        }
-        Divide(target, a, b) -> {
-            return "Divide $" + toString(target) + " = $" + toString(a) + " / $" + toString(b);
-        }
-        Or(target, a, b) -> {
-            return "Or $" + toString(target) + " = $" + toString(a) + " || $" + toString(b);
-        }
-        And(target, a, b) -> {
-            return "And $" + toString(target) + " = $" + toString(a) + " && $" + toString(b);
-        }
-        Greater(target, a, b) -> {
-            return "Greater $" + toString(target) + " = $" + toString(a) + " > $" + toString(b);
-        }
-        GreaterEq(target, a, b) -> {
-            return "GreaterEq $" + toString(target) + " = $" + toString(a) + " >= $" + toString(b);
-        }
-        Smaller(target, a, b) -> {
-            return "Smaller $" + toString(target) + " = $" + toString(a) + " < $" + toString(b);
-        }
-        SmallerEq(target, a, b) -> {
-            return "SmallerEq $" + toString(target) + " = $" + toString(a) + " <= $" + toString(b);
-        }
-        Equals(target, a, b) -> {
-            return "Equals $" + toString(target) + " = $" + toString(a) + " == $" + toString(b);
-        }
-        NonEquals(target, a, b) -> {
-            return "NonEquals $" + toString(target) + " = $" + toString(a) + " != $" + toString(b);
-        }
-    }
-}
-
-
 fn instructionCode(instruction: Instruction) -> string {
     match instruction {
         Debug(reg) -> {
             return "Debug: " + toString(reg);
+        }
+        CreateClosure(target, size, path) -> {
+            return "CreateClosure: " + toString(target) + ", " + toString(size) + ", \"" + path +"\"";
+        }
+        Match(src, target, lookup) -> {
+            let lookUpString = Ref("");
+            forEachBI(lookup, fn (index: number, target_: number) -> void {
+                lookUpString.value = lookUpString.value + toString(index) + ", " + toString(target_) + ", ";
+            });
+            return "Match: " + toString(src) + ", " + toString(target) + ", " + lookUpString.value;
+        }
+        CopyEnumMember(target, src, size) -> {
+            return "CopyEnumMember: " + toString(target) + ", " + toString(src) + ", " + toString(size);
+        }
+        LoadEnumType(target, src) -> {
+            return "LoadEnumType: " + toString(target) + ", " + toString(src);
+        }
+        LoadEnumMember(target, src, offset) -> {
+            return "LoadEnumMember: " + toString(target) + ", " + toString(src) + ", " + toString(offset);
         }
         CreateEnumEntry(target, index, size) -> {
             return "CreateEnumEntry: " + toString(target) + ", " + toString(index) + ", " + toString(size);
@@ -184,6 +110,9 @@ fn instructionCode(instruction: Instruction) -> string {
         }
         StoreArray(src, array, offset) -> {
             return "StoreArray: " + toString(array) + ", " + toString(offset) + ", " + toString(src);
+        }
+        Throw(src) -> {
+            return "Throw: " + toString(src);
         }
         Jump(label) -> {
             return "Jump: " + toString(label);

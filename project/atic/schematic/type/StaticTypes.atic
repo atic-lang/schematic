@@ -4,6 +4,10 @@ use atic.schematic.type.Type;
 use atic.schematic.tokens.Node;
 use atic.schematic.Statement;
 use atic.schematic.Context;
+use atic.schematic.type.TypeSystem;
+use atic.schematic.Expression;
+use Main;
+
 
 struct Enum {
     path: Path;
@@ -39,6 +43,7 @@ struct RichFunction {
     inputs: List<Variable>;
     output: Type;
     captures: List<Variable>;
+    count: number;
 }
 
 fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
@@ -49,7 +54,10 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
     forEach(walk("declaration", "declarationList", node), fn (input: Node) -> void {
         let name = id(input);
         let typeNode = getNode(input, "type");
-        let variable = Variable(name, typeFromTree(typeNode, context), Location.Input(), Modifier.Final(), Optional.None<Variable>());
+        let variable = Variable(name, typeFromTree(typeNode, context), 
+            Location.Input(), 
+            Modifier.Final(), 
+            Optional.None<Variable>());
         insert(inputs, variable);
         insert(inputVariable, variable);
     });
@@ -57,15 +65,67 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
     let copyContext = contextCopy(context);
 
     forEach(context.variables, fn (var: Variable) -> void {
-        insert(inputVariable, Variable(var.name, var.type, Location.Closure(), Modifier.Final(), Optional.Some(var)));
+        insert(inputVariable, Variable(var.name, var.type, 
+            Location.Closure(),
+            Modifier.Final(),
+            Optional.Some(var)));
     });
     copyContext.variables = inputVariable;
+    copyContext.returnType = returnType;
 
     let statement = statementFromNode(getNode(node, "statement"), copyContext);
-    //TODO usages
 
-    return RichFunction(statement, inputs, returnType, newList<Variable>());
+    let returning = testForReturns(statement, false);
+    if !returning {
+        if testTypes(Type.Primitive("void"), returnType, emptyQuery()) {
+            let emptyReturn = Statement.Return(ReturnStatement(Optional.None<Expression>()));
+            if statement matches Block(blockStatement) {
+                insert(blockStatement.list, emptyReturn);
+            } else {
+                let emptyBlock = BlockStatement(newList<Statement>());
+                insert(emptyBlock.list, statement);
+                insert(emptyBlock.list, emptyReturn);
+                statement = Statement.Block(emptyBlock);
+            }
+        } else {
+            throw AssertError("incomplete code branching for closure function " + toString(node));
+        }
+    }
+
+
+    let usages = filter(statementUsages(statement), fn (var: Variable) -> bool {
+        match var.location {
+            Global() -> {
+                return false;
+            }
+            Local() -> {
+                return false;
+            }
+            Input() -> {
+                return false;
+            }
+            Closure() -> {
+                if var.parent matches None() {
+                    return false;
+                } else matches Some(parent) {
+                    return contains(context.variables, parent);
+                }
+            }
+            Match() -> {
+                return false;
+            }
+        }
+    });
+    forEach(usages, fn (var: Variable) -> void {
+        print(var.name + " is in anon function");
+    }); 
+
+    let func = RichFunction(statement, inputs, returnType, usages, context.environment.project.closures.size);
+    insert(context.environment.project.closures, func);
+    return func;
 }
+
+
 
 struct Generics {
     types: List<GenericType>;

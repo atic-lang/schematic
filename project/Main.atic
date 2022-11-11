@@ -22,7 +22,8 @@ fn main() {
         "C:/Users/Moritz/Documents/Projects/java/atic/res/res2",
         newList<Unit>(),
         ["atic"],
-        defaultImports
+        defaultImports,
+        newList<RichFunction>()
     );
     let src: string = loadFile("C:/Users/Moritz/Documents/Projects/java/atic/res/res2/testGrammar.txt");
     let ruleSet = generateRuleSet(split(src,"\n"));
@@ -283,8 +284,8 @@ fn testForReturns(statement: Statement, allowEarlyReturns: bool) -> bool {
         }
         Match(matchStatement) -> {
             let returningRef = Ref(true);
-            forEachBI(matchStatement.statements, fn(entry: EnumEntry, subStatement: Statement) -> void {
-                let returning = testForReturns(subStatement, allowEarlyReturns);
+            forEachBI(matchStatement.statements, fn(entry: EnumEntry, subStatement: MatchCase) -> void {
+                let returning = testForReturns(subStatement.statement, allowEarlyReturns);
                 if !returning {
                     returningRef.value = false;
                 }

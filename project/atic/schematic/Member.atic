@@ -27,6 +27,48 @@ enum Access {
     Member(Type, number);
 }
 
+fn memberUsages(member: Member) -> List<Variable> {
+    let variables = newList<Variable>();
+    match member.type {
+        Function(staticFunction, expressions) -> {
+            forEach(expressions, fn(expr: Expression) -> void {
+                addAll(variables, expressionUsages(expr));
+            });
+        }
+        Initialisation(struct_, expressions) -> {
+            forEach(expressions, fn(expr: Expression) -> void {
+                addAll(variables, expressionUsages(expr));
+            });
+        }
+        EnumOption(enum_, enumEntry, expressions) -> {
+            forEach(expressions, fn(expr: Expression) -> void {
+                addAll(variables, expressionUsages(expr));
+            });
+        }
+        Local(variable, accesses) -> {
+            insert(variables, variable);
+            forEach(accesses, fn(access: Access) -> void {
+                match access {
+                    Array(Type, expression) -> {
+                        addAll(variables, expressionUsages(expression));
+                    }
+                    Call(Type, expressions) -> {
+                        forEach(expressions, fn(expr: Expression) -> void {
+                            addAll(variables, expressionUsages(expr));
+                        });
+                    }
+                    Member(Type, number) -> {
+                        
+                    }
+                }
+            });
+        }
+    }
+
+    return variables;
+}
+
+
 fn memberFromTree(node: Node, context: Context) -> Member {
     assertType(node, "member");
     let startID: string = id(node);
@@ -302,5 +344,5 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         let solvedList = solvedList(query);
         return CallAccess(exprList, Type.Enum(EnumImpl(enum_, solvedList)));
     }
-    throw AssertError("not impl");
+    throw AssertError("not impl for member");
 }

@@ -25,66 +25,66 @@ fn compileProject(project: Project, outFile: string) -> CompiledProject {
 
     let codeStr = Ref("");
     forEach(project.units, fn (ref: Unit) -> void {
-        let line = compileUnit(ref, outFile);
+        let line = compileUnit(ref);
         codeStr.value = codeStr.value + line + "\n";
     });
-    saveFile(outFile + "/out.mini",codeStr.value + codeStart);
+    codeStr.value = codeStr.value + compileClosures(project) + "\n";
+
+    saveFile(outFile + "/out.mini", codeStr.value + codeStart);
 
     return CompiledProject(project);
 }
 
-fn compileUnit(unit: Unit, outFile: string) -> string {
-    let pathStr = unit.path.path;
-    let toFilePath = outFile + "/" + replace(pathStr, ".", "/") + ".txt";
-    let lines = newList<string>();
+fn compileClosures(project: Project) -> string {
     let codes = newList<string>();
+    forEach(project.closures, fn (func: RichFunction) -> void {
+        let response = compileClosure(func);
+        insert(codes, "fn #closure" + toString(func.count));
 
+        forEach(response.list, fn(instruction: InfoObject) -> void {
+            insert(codes, infoObjecttoString(instruction));
+        }); 
+        if response.asmObj.usedRegisters < 0 {
+            response.asmObj.usedRegisters = 0;
+        }
+        insert(codes,  "registers " + toString(response.asmObj.usedRegisters));
+        insert(codes,  "params " + toString(func.inputs.size));
+
+        insert(codes, "end\n");
+    }); 
+
+    let codeStr = Ref("");
+    forEach(codes, fn (line: string) -> void {
+        codeStr.value = codeStr.value + line + "\n";
+    });
+
+    return codeStr.value;
+}
+
+fn compileUnit(unit: Unit) -> string {
+    let codes = newList<string>();
     
     forEachBI(unit.functions, fn (function: StaticFunction, unused: Node) -> void {
         if function.properties.isNative {
             return;
         }
         let response = compileFunction(function);
-        insert(lines, function.path.path + ":");
         insert(codes, "fn " + function.path.path);
 
         if function.path.path == "Main.print" {
             insert(codes, "\tDebug: 0.0");
         }
         forEach(response.list, fn(instruction: InfoObject) -> void {
-            let toStr = "";
-            match instruction {
-                Instruction(instruction_) -> {
-                    toStr = "\t " + instructionDebugString(instruction_);
-                    insert(codes, "\t" +instructionCode(instruction_));
-                }
-                Label(number) -> {
-                    toStr = "#" + toString(number) + ":";
-                    insert(codes, "\t#" +toString(number));
-                }
-                Comment(string) -> {
-                    toStr = "\t//" + string;
-                }
-            }
-            insert(lines, toStr);
+            insert(codes, infoObjecttoString(instruction));
         }); 
         if response.asmObj.usedRegisters < 0 {
             response.asmObj.usedRegisters = 0;
         }
-        insert(lines,  "registers " + function.path.path + ": " + toString(response.asmObj.usedRegisters));
         insert(codes,  "registers " + toString(response.asmObj.usedRegisters));
         insert(codes,  "params " + toString(function.inputs.size));
 
-
-
-        insert(lines, "\n");
         insert(codes, "end\n");
     });
-    let dbgStr = Ref("");
-    forEach(lines, fn (line: string) -> void {
-        dbgStr.value = dbgStr.value + line + "\n";
-    });
-
 
 
     let codeStr = Ref("");
@@ -92,14 +92,32 @@ fn compileUnit(unit: Unit, outFile: string) -> string {
         codeStr.value = codeStr.value + line + "\n";
     });
 
-    saveFile(toFilePath, dbgStr.value);
     return codeStr.value;
 }
+
+fn infoObjecttoString(instruction: InfoObject) -> string {
+    match instruction {
+        Instruction(instruction_) -> {
+            return "\t" +instructionCode(instruction_);
+        }
+        Label(number) -> {
+            return "\t#" +toString(number);
+        }
+        Comment(string) -> {
+            return "";
+        }
+    }
+}
+
 struct AsmObj {
     registers: Map<Variable,number>;
     instructions: List<InfoObject>;
     usedRegisters: number;
     usedLabels: number;
+}
+
+struct CompilationClosure {
+    index: number;
 }
 
 enum InfoObject {
@@ -111,6 +129,26 @@ enum InfoObject {
 struct CompileResponse {
     list: List<InfoObject>;
     asmObj: AsmObj;
+}
+
+fn compileClosure(function: RichFunction) -> CompileResponse {
+    let list = newList<InfoObject>();
+    let registerMap = newMap<Variable,number>(); 
+    let info = AsmObj(registerMap, list, -1, 0);
+
+    forEach(function.inputs, fn (input: Variable) -> void {
+        let target = useRegister(info);
+        put(info.registers, input, target);
+    });
+
+    forEach(function.captures, fn (input: Variable) -> void {
+        let target = useRegister(info);
+        put(info.registers, input, target);
+    });
+
+
+    compileStatement(function.statement, info);
+    return CompileResponse(list, info);
 }
 
 fn compileFunction(function: StaticFunction) -> CompileResponse {
@@ -194,16 +232,20 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                         } 
                     }       
                 } else matches None() {
-                    throw AssertError("cant find variable");
+                    throw AssertError("cant find variable for assign");
                 }                          
             }
         }
         Branch(branchStatement) -> {
             let condition = compileExpression(branchStatement.expression, info);
             let target = useLabel(info);
+            let end = useLabel(info);
             addInstruction(Instruction.JumpIfNot(condition, target), info);
             compileStatement(branchStatement.thenStatement, info);
+            addInstruction(Instruction.Jump(end), info);
             addLabel(target, info);
+            compileStatement(branchStatement.elseStatement, info);
+            addLabel(end, info);
         }
         Declaration(declarationStatement) -> {
             let expr = declarationStatement.expression;
@@ -234,7 +276,39 @@ fn compileStatement(statement: Statement, info: AsmObj) {
         }
         Match(matchStatement) -> {
             let endLabel = useLabel(info);
-            
+            let condition = compileExpression(matchStatement.expression, info);
+            let labelLookup = newMap<number, number>();
+
+
+            forEachBI(matchStatement.statements, fn (entry: EnumEntry, caseBranch: MatchCase) -> void {
+                let caseLabel = useLabel(info);
+                put(labelLookup, entry.index, caseLabel);
+            });
+
+            addInstruction(Instruction.Match(condition, endLabel, labelLookup), info);
+
+            forEachBI(matchStatement.statements, fn (entry: EnumEntry, caseBranch: MatchCase) -> void {
+                if get(labelLookup, entry.index) matches Some(caseLabel) {
+                    addLabel(caseLabel, info);
+
+                    if caseBranch.variables.size > 0 {
+                        let destructStart = useRegister(info);
+                        info.usedRegisters = info.usedRegisters + (caseBranch.variables.size-1);
+                        addInstruction(Instruction.CopyEnumMember(destructStart, condition, caseBranch.variables.size), info);
+                        forEachI(caseBranch.variables, fn (variable: Variable, index: number) -> void {
+                            put(info.registers, variable, destructStart + index);
+                        }); 
+                    }
+
+                    compileStatement(caseBranch.statement, info);
+                    addInstruction(Instruction.Jump(endLabel), info);
+                } else {
+                    throw AssertError("could not happen");
+                }
+            });
+
+
+            addLabel(endLabel, info);
         }
     }
 }
@@ -242,8 +316,24 @@ fn compileStatement(statement: Statement, info: AsmObj) {
 fn compileExpression(expression: Expression, info: AsmObj) -> number {
     if expression matches Bool(boolExpr) {
         return compileBoolExpression(boolExpr, info);
+    } else matches Function(richFunction) {
+        let target = useRegister(info);
+        forEachI(richFunction.captures, fn(variable: Variable, index: number) -> void {
+            if variable.parent matches Some(container) {
+                let option = get(info.registers, container);
+                if option matches Some(target_) {
+                    addInstruction(Instruction.Argument(index, target_), info);
+                } else {
+                    throw AssertError("cant find variable for capture " + variable.name);
+                }
+            } else {
+                throw AssertError("cant unwrap parent of variable " + variable.name);
+            }
+        });
+        addInstruction(Instruction.CreateClosure(target, richFunction.captures.size, "#closure" + toString(richFunction.count)), info);
+        return target;
     }
-    throw AssertError("not impl");
+    
 }
 
 fn compileBoolExpression(boolExpr: BoolExpression, info: AsmObj) -> number {
@@ -358,6 +448,7 @@ fn compileMember(member: Member, info: AsmObj) -> number {
                                 let exprTarget = compileExpression(expr, info);
                                 insert(argList, exprTarget);
                             });
+                            
                             forEachI(argList, fn (exprTarget: number, index: number) -> void {
                                 addInstruction(Instruction.Argument(index, exprTarget), info);
                             });    
@@ -373,7 +464,7 @@ fn compileMember(member: Member, info: AsmObj) -> number {
                 return target_.value;
             }
         } else matches None() {
-            throw AssertError("cant find variable ");
+            throw AssertError("cant find variable for member " + var.name);
         }
     } else if member.type matches Function(staticFunction, expressions) {
         let functionRegister = useRegister(info);
@@ -412,12 +503,12 @@ fn compileMember(member: Member, info: AsmObj) -> number {
 
 
         let argList = newList<number>();
-        forEachI(expressions, fn (expr: Expression, index: number) -> void {
+        forEachI(expressions, fn (expr: Expression, index_: number) -> void {
            let exprTarget = compileExpression(expr, info);
            insert(argList, exprTarget);
         });
-        forEachI(argList, fn (exprTarget: number, index: number) -> void {
-           addInstruction(Instruction.Argument(index, exprTarget), info);
+        forEachI(argList, fn (exprTarget: number, index_: number) -> void {
+           addInstruction(Instruction.Argument(index_, exprTarget), info);
         });
 
         let target = useRegister(info);

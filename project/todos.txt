@@ -6,6 +6,8 @@ fix assignment for for functions, enums, etc
 
 staticFunction().some.assing = "100";
 escape strings in .mini format
-
+tyehints for ... matches and check for else branches
+default function for defaults struct types
+touples
 
 sprache is about having the right informations at the right time/place
