@@ -1,0 +1,11 @@
+fix all name collisions
+fix richFunctions
+fix incomplete matches
+fix order of operations
+fix assignment for for functions, enums, etc
+
+staticFunction().some.assing = "100";
+escape strings in .mini format
+
+
+sprache is about having the right informations at the right time/place

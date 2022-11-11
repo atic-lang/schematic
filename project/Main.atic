@@ -14,7 +14,7 @@ use atic.schematic.Statement;
 use atic.schematic.Expression;
 
 
-fn Main() {
+fn main() {
     let defaultImports = newList<Path>();
     insert(defaultImports, Path("Core"));
     let project: Project = Project(

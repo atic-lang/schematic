@@ -20,14 +20,15 @@ struct CompiledProject {
 }
 
 fn compileProject(project: Project, outFile: string) -> CompiledProject {
-
    
+    let codeStart = "\n\nfn #entry\n\tLoadFunction: 0.0, \"Main.main\"\n\tInvokeFunction: 0.0, 0.0\n\tExit: 0\nregisters 1.0\nparams 0\nend\n\n";
+
     let codeStr = Ref("");
     forEach(project.units, fn (ref: Unit) -> void {
         let line = compileUnit(ref, outFile);
         codeStr.value = codeStr.value + line + "\n";
     });
-    saveFile(outFile + "/out.mini", codeStr.value);
+    saveFile(outFile + "/out.mini",codeStr.value + codeStart);
 
     return CompiledProject(project);
 }
@@ -37,12 +38,20 @@ fn compileUnit(unit: Unit, outFile: string) -> string {
     let toFilePath = outFile + "/" + replace(pathStr, ".", "/") + ".txt";
     let lines = newList<string>();
     let codes = newList<string>();
+
     
     forEachBI(unit.functions, fn (function: StaticFunction, unused: Node) -> void {
-        let instructions = compileFunction(function);
+        if function.properties.isNative {
+            return;
+        }
+        let response = compileFunction(function);
         insert(lines, function.path.path + ":");
         insert(codes, "fn " + function.path.path);
-        forEach(instructions, fn(instruction: InfoObject) -> void {
+
+        if function.path.path == "Main.print" {
+            insert(codes, "\tDebug: 0.0");
+        }
+        forEach(response.list, fn(instruction: InfoObject) -> void {
             let toStr = "";
             match instruction {
                 Instruction(instruction_) -> {
@@ -59,6 +68,14 @@ fn compileUnit(unit: Unit, outFile: string) -> string {
             }
             insert(lines, toStr);
         }); 
+        if response.asmObj.usedRegisters < 0 {
+            response.asmObj.usedRegisters = 0;
+        }
+        insert(lines,  "registers " + function.path.path + ": " + toString(response.asmObj.usedRegisters));
+        insert(codes,  "registers " + toString(response.asmObj.usedRegisters));
+        insert(codes,  "params " + toString(function.inputs.size));
+
+
 
         insert(lines, "\n");
         insert(codes, "end\n");
@@ -67,6 +84,8 @@ fn compileUnit(unit: Unit, outFile: string) -> string {
     forEach(lines, fn (line: string) -> void {
         dbgStr.value = dbgStr.value + line + "\n";
     });
+
+
 
     let codeStr = Ref("");
     forEach(codes, fn (line: string) -> void {
@@ -89,7 +108,12 @@ enum InfoObject {
     Comment(string);
 }
 
-fn compileFunction(function: StaticFunction) -> List<InfoObject> {
+struct CompileResponse {
+    list: List<InfoObject>;
+    asmObj: AsmObj;
+}
+
+fn compileFunction(function: StaticFunction) -> CompileResponse {
     let list = newList<InfoObject>();
     let registerMap = newMap<Variable,number>(); 
     let info = AsmObj(registerMap, list, -1, 0);
@@ -104,7 +128,7 @@ fn compileFunction(function: StaticFunction) -> List<InfoObject> {
     } else {
         throw AssertError("cant find statement for compiling");
     }
-    return list;
+    return CompileResponse(list, info);
 }
 
 fn compileStatement(statement: Statement, info: AsmObj) {
@@ -137,10 +161,15 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                                     addInstruction(Instruction.LoadArray(target_, src, exprTarget), info);
                                 }
                                 Call(type, expressions) -> {
+                                    let argList = newList<number>();
                                     forEachI(expressions, fn (expr: Expression, index: number) -> void {
                                         let exprTarget = compileExpression(expr, info);
+                                        insert(argList, exprTarget);
+                                    });
+                                    forEachI(argList, fn (exprTarget: number, index: number) -> void {
                                         addInstruction(Instruction.Argument(index, exprTarget), info);
                                     });
+
                                     addInstruction(Instruction.InvokeFunction(target_, src), info);
                                 }
                                 Member(type, offset) -> {
@@ -189,7 +218,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
             addInstruction(Instruction.Return(returnTarget), info);
         }
         Single(singleStatement) -> {
-            //compileExpression(singleStatement.expression, info);
+            compileMember(singleStatement.member, info);
         }
         While(whileStatement) -> {
             let beginLabel = useLabel(info);
@@ -204,6 +233,8 @@ fn compileStatement(statement: Statement, info: AsmObj) {
         Throw(throwStatement) -> {
         }
         Match(matchStatement) -> {
+            let endLabel = useLabel(info);
+            
         }
     }
 }
@@ -300,72 +331,100 @@ fn compileFactor(factor: Factor, info: AsmObj) -> number {
             return target;
         }
         Member(member) -> {
-            if member.type matches Local(var, accessList) {
-                let option = get(info.registers, var);
-                if option matches Some(target) {
-                    //TODO accessList
-                    if accessList.size == 0 {
-                        return target;
-                    } else {
-                        let target_ = Ref(useRegister(info));
-                        let src = Ref(target);
-                        forEach(accessList, fn (access: Access) -> void {
-                            match access {
-                                Array(type, expression) -> {
-                                    let exprTarget = compileExpression(expression, info);
-                                    addInstruction(Instruction.LoadArray(target_.value, src.value, exprTarget), info);
-                                }
-                                Call(type, expressions) -> {
-                                    forEachI(expressions, fn (expr: Expression, index: number) -> void {
-                                        let exprTarget = compileExpression(expr, info);
-                                        addInstruction(Instruction.Argument(index, exprTarget), info);
-                                    });
-                                    addInstruction(Instruction.InvokeFunction(target_.value, src.value), info);
-                                }
-                                Member(type, offset) -> {
-                                    addInstruction(Instruction.LoadMember(target_.value, src.value, offset), info);
-                                }
-                            }
-                            src.value = target_.value;
-                        });
-                        return target_.value;
-                    }
-                } else matches None() {
-                    throw AssertError("cant find variable ");
-                }
-            } else if member.type matches Function(staticFunction, expressions) {
-                let functionRegister = useRegister(info);
-                addInstruction(Instruction.LoadFunction(functionRegister, staticFunction.path.path), info);
-
-                forEachI(expressions, fn (expr: Expression, index: number) -> void {
-                    let exprTarget = compileExpression(expr, info);
-                    addInstruction(Instruction.Argument(index, exprTarget), info);
-                });
-                let targetRegister = useRegister(info);
-                addInstruction(Instruction.InvokeFunction(targetRegister, functionRegister), info);
-                return targetRegister;
-            } else if member.type matches Initialisation(struct_, expressions) {
-                forEachI(expressions, fn (expr: Expression, index: number) -> void {
-                    let exprTarget = compileExpression(expr, info);
-                    addInstruction(Instruction.Argument(index, exprTarget), info);
-                });
-                let targetRegister = useRegister(info);
-                addInstruction(Instruction.CreateStruct(targetRegister, struct_.path.path, struct_.members.size), info);
-                return targetRegister;
-            } else if member.type matches EnumOption(enum_, enumEntry, expressions) {
-                let index = enumEntry.index;
-                let size = enumEntry.components.size;
-                forEachI(expressions, fn (expr: Expression, index: number) -> void {
-                    let exprTarget = compileExpression(expr, info);
-                    addInstruction(Instruction.Argument(index, exprTarget), info);
-                });
-                let target = useRegister(info);
-                addInstruction(Instruction.CreateEnumEntry(target, index, size), info);
-                return target;
-            }
-            throw AssertError("member not implemented");
+            return compileMember(member, info);
         }
     }
+}
+fn compileMember(member: Member, info: AsmObj) -> number {
+    if member.type matches Local(var, accessList) {
+        let option = get(info.registers, var);
+        if option matches Some(target) {
+            //TODO accessList
+            if accessList.size == 0 {
+                return target;
+            } else {
+                let target_ = Ref(useRegister(info));
+                let src = Ref(target);
+                forEach(accessList, fn (access: Access) -> void {
+                    match access {
+                        Array(type, expression) -> {
+                            let exprTarget = compileExpression(expression, info);
+                            addInstruction(Instruction.LoadArray(target_.value, src.value, exprTarget), info);
+                        }
+                        Call(type, expressions) -> {
+
+                            let argList = newList<number>();
+                            forEachI(expressions, fn (expr: Expression, index: number) -> void {
+                                let exprTarget = compileExpression(expr, info);
+                                insert(argList, exprTarget);
+                            });
+                            forEachI(argList, fn (exprTarget: number, index: number) -> void {
+                                addInstruction(Instruction.Argument(index, exprTarget), info);
+                            });    
+
+                            addInstruction(Instruction.InvokeFunction(target_.value, src.value), info);
+                        }
+                        Member(type, offset) -> {
+                            addInstruction(Instruction.LoadMember(target_.value, src.value, offset), info);
+                        }
+                    }
+                    src.value = target_.value;
+                });
+                return target_.value;
+            }
+        } else matches None() {
+            throw AssertError("cant find variable ");
+        }
+    } else if member.type matches Function(staticFunction, expressions) {
+        let functionRegister = useRegister(info);
+        addInstruction(Instruction.LoadFunction(functionRegister, staticFunction.path.path), info);
+
+
+        let argList = newList<number>();
+        forEachI(expressions, fn (expr: Expression, index: number) -> void {
+            let exprTarget = compileExpression(expr, info);
+            insert(argList, exprTarget);
+        });
+        forEachI(argList, fn (exprTarget: number, index: number) -> void {
+            addInstruction(Instruction.Argument(index, exprTarget), info);
+        }); 
+
+        let targetRegister = useRegister(info);
+        addInstruction(Instruction.InvokeFunction(targetRegister, functionRegister), info);
+        return targetRegister;
+    } else if member.type matches Initialisation(struct_, expressions) {
+
+        let argList = newList<number>();
+        forEachI(expressions, fn (expr: Expression, index: number) -> void {
+            let exprTarget = compileExpression(expr, info);
+            insert(argList, exprTarget);
+        });
+        forEachI(argList, fn (exprTarget: number, index: number) -> void {
+            addInstruction(Instruction.Argument(index, exprTarget), info);
+        }); 
+
+        let targetRegister = useRegister(info);
+        addInstruction(Instruction.CreateStruct(targetRegister, struct_.path.path, struct_.members.size), info);
+        return targetRegister;
+    } else if member.type matches EnumOption(enum_, enumEntry, expressions) {
+        let index = enumEntry.index;
+        let size = enumEntry.components.size;
+
+
+        let argList = newList<number>();
+        forEachI(expressions, fn (expr: Expression, index: number) -> void {
+           let exprTarget = compileExpression(expr, info);
+           insert(argList, exprTarget);
+        });
+        forEachI(argList, fn (exprTarget: number, index: number) -> void {
+           addInstruction(Instruction.Argument(index, exprTarget), info);
+        });
+
+        let target = useRegister(info);
+        addInstruction(Instruction.CreateEnumEntry(target, index, size), info);
+        return target;
+    }
+    throw AssertError("member not implemented");
 }
 
 fn addInstruction(instruction: Instruction, info: AsmObj) {

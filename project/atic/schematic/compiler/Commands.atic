@@ -29,6 +29,12 @@ enum Instruction {
     JumpIfNot(number, number); //test Register, Jump label;
     Jump(number); //Jump label;
 
+    Exit(number); //Exit code
+
+    LoadEnumType(number, number); //target register, enum src
+    LoadEnumMember(number, number, number); //target register, enum src, member offset;
+    
+
     LoadMember(number, number, number); //target register, member register, member offset;
     LoadArray(number, number, number); //target register, array register, offset register;
     StoreMember(number, number, number); //src register, member register, member offset;
@@ -76,6 +82,9 @@ fn instructionDebugString(instruction: Instruction) -> string {
         }
         LoadConst(target, constant) -> {
             return "LoadConst $" + toString(target) + " = " + toString(constant);
+        }
+        Exit(code) -> {
+            return "Exit " + toString(code);
         }
         JumpIfNot(test, label) -> {
             return "JumpIfNot $" + toString(test) + " #" + toString(label);
@@ -179,6 +188,9 @@ fn instructionCode(instruction: Instruction) -> string {
         Jump(label) -> {
             return "Jump: " + toString(label);
         }
+        Exit(code) -> {
+            return "Exit: " + toString(code);
+        }
         LoadFunction(target, path) -> {
             return "LoadFunction: " + toString(target) + ", \"" + path + "\"";
         }
@@ -186,7 +198,7 @@ fn instructionCode(instruction: Instruction) -> string {
             return "Return: " + toString(src);
         }
         InvokeFunction(returnAdress, register) -> {
-            return "InvokeFunction:" + toString(returnAdress) + ", " + toString(register);
+            return "InvokeFunction: " + toString(returnAdress) + ", " + toString(register);
         }
         Argument(index, register) -> {
             return "Argument: " + toString(index) + ", " + toString(register);
