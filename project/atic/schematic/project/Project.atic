@@ -16,7 +16,7 @@ struct Project {
     entries: Map<string,PathEntry>;
     file: string;
     units: List<Unit>;
-    extensions: lst string;
+    extensions: List<string>;
     defaultImports: List<Path>;
     closures: List<RichFunction>;
 }

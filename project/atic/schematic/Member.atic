@@ -15,7 +15,7 @@ struct Member {
 }
 
 enum MemberType {
-    Function(StaticFunction, List<Expression>);
+    Function(StaticFunction, List<Expression>, List<Access>);
     Initialisation(Struct, List<Expression>);
     EnumOption(Enum, EnumEntry, List<Expression>);
     Local(Variable, List<Access>);
@@ -30,10 +30,11 @@ enum Access {
 fn memberUsages(member: Member) -> List<Variable> {
     let variables = newList<Variable>();
     match member.type {
-        Function(staticFunction, expressions) -> {
+        Function(staticFunction, expressions, accesses) -> {
             forEach(expressions, fn(expr: Expression) -> void {
                 addAll(variables, expressionUsages(expr));
             });
+            addAll(variables, usagesFromAccess(accesses));
         }
         Initialisation(struct_, expressions) -> {
             forEach(expressions, fn(expr: Expression) -> void {
@@ -47,24 +48,30 @@ fn memberUsages(member: Member) -> List<Variable> {
         }
         Local(variable, accesses) -> {
             insert(variables, variable);
-            forEach(accesses, fn(access: Access) -> void {
-                match access {
-                    Array(Type, expression) -> {
-                        addAll(variables, expressionUsages(expression));
-                    }
-                    Call(Type, expressions) -> {
-                        forEach(expressions, fn(expr: Expression) -> void {
-                            addAll(variables, expressionUsages(expr));
-                        });
-                    }
-                    Member(Type, number) -> {
-                        
-                    }
-                }
-            });
+            addAll(variables, usagesFromAccess(accesses));
         }
     }
 
+    return variables;
+}
+
+fn usagesFromAccess(accesses: List<Access>) -> List<Variable> {
+    let variables = newList<Variable>();
+    forEach(accesses, fn(access: Access) -> void {
+        match access {
+            Array(Type, expression) -> {
+                addAll(variables, expressionUsages(expression));
+            }
+            Call(Type, expressions) -> {
+                forEach(expressions, fn(expr: Expression) -> void {
+                    addAll(variables, expressionUsages(expr));
+                });
+            }
+            Member(Type, number) -> {
+                
+            }
+        }
+    });
     return variables;
 }
 
@@ -75,67 +82,8 @@ fn memberFromTree(node: Node, context: Context) -> Member {
     let contextVar = askForLocal(context, startID);
     let nodeComponents = walk("varTerminal", "memberCompound", node);
     if contextVar matches Some(variable) {
-        let compounds = newList<Access>();
-        let typeRef = Ref(variable.type);
-        if isPresent(node, "memberCompound") {
-            forEach(nodeComponents, fn (subNode: Node) -> void {
-                let subTerm: Node = child(subNode);
-                let subName = subTerm.name;
-                if subName == "memberAccess" {
-                    let inType: Type = typeRef.value;
-                    if inType matches Struct(structImpl) {
-                        //TODO implement generics
-                        let memberName: string = id(subTerm);
-                        let memberReference = Optional.None<Type>();
-                        let memberIndex = -1;
-                        let list = getMembers(structImpl);
-                        let i: number = 0;
-                        let s: number = list.size;
-
-                        while i < s {
-                            let element: BIEntry<string,Type> = getAt(list,i);
-                            if element.key == memberName {
-                                memberReference = Optional.Some(element.value);
-                                memberIndex = i;
-                            }
-                            i = i + 1;
-                        }
-
-                        if memberReference matches None() {
-                            throw AssertError("cant find member " + memberName);
-                        } else matches Some(member) {
-                            let access = Access.Member(member, memberIndex);
-                            insert(compounds, access);
-                            typeRef.value = member;
-                        }
-                    } else {
-                        throw AssertError("cant access a member from a here");
-                    }
-                } else if subName == "callAccess" {
-                    let inType: Type = typeRef.value;
-                    if inType matches Function(functionType) {
-                        let call = callAccess(CallableType.Function(functionType), subTerm, context);
-                        let access = Access.Call(call.returnType, call.arguments);
-                        insert(compounds, access);
-                        typeRef.value = call.returnType;
-                    } else {
-                        throw AssertError("only call a function");
-                    }
-                } else if subName == "arrayAccess" {
-                    let inType: Type = typeRef.value;
-                    if inType matches Array(subType) {
-                        let expr = exprFromNode(getNode(subTerm, "expression"), context);
-                        let access = Access.Array(subType, expr);
-                        insert(compounds, access);
-                        typeRef.value = subType;
-                    } else {
-                        throw AssertError("cant array access a here");
-                    }
-                }
-
-            });
-        }
-        return Member(MemberType.Local(variable, compounds), typeRef.value);
+        let infos = getAccessInfos(node, variable.type, nodeComponents, context);
+        return Member(MemberType.Local(variable, infos.compounds), infos.type);
     } else {
         let pathOption = askFor(context, Path(startID));
         if pathOption matches None() {
@@ -143,8 +91,8 @@ fn memberFromTree(node: Node, context: Context) -> Member {
         } else matches Some(pathEntry) {
             match pathEntry {
                 Function(staticFunction) -> {
-                    if nodeComponents.size != 1 {
-                        throw AssertError("you have to call the function");
+                    if nodeComponents.size < 1 {
+                        throw AssertError("you have to call the function " + staticFunction.path.path);
                     }
                     let callNode: Node = child(getAt(nodeComponents, 0));
                     if callNode.name != "callAccess" {
@@ -157,7 +105,15 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                     let asFunctionType = FunctionType(argList, staticFunction.output, staticFunction.generics);
                     let call = callAccess(CallableType.Function(asFunctionType), callNode, context);
                     //TODO implement remaining access
-                    return Member(MemberType.Function(staticFunction, call.arguments), call.returnType);
+                    let subList = newList<Node>();
+                    forEachI(nodeComponents, fn (subN: Node, index: number) -> void {
+                        if index != 0 {
+                            insert(subList, subN);
+                        }
+                    });
+                    let infos = getAccessInfos(node, call.returnType, subList, context);
+
+                    return Member(MemberType.Function(staticFunction, call.arguments, infos.compounds), infos.type);
                 }
                 Enum(enum_) -> {
                     if nodeComponents.size != 2 {
@@ -202,6 +158,74 @@ fn memberFromTree(node: Node, context: Context) -> Member {
     }
 }
 
+fn getAccessInfos(node: Node, startType: Type, nodeComponents: List<Node>, context: Context) -> AccessInfo {
+    let compounds = newList<Access>();
+    let typeRef = Ref(startType);
+    if isPresent(node, "memberCompound") {
+        forEach(nodeComponents, fn (subNode: Node) -> void {
+            let subTerm: Node = child(subNode);
+            let subName = subTerm.name;
+            if subName == "memberAccess" {
+                let inType: Type = typeRef.value;
+                if inType matches Struct(structImpl) {
+                    let memberName: string = id(subTerm);
+                    let memberReference = Optional.None<Type>();
+                    let memberIndex = -1;
+                    let list = getMembers(structImpl);
+                    let i: number = 0;
+                    let s: number = list.size;
+
+                    while i < s {
+                        let element: BIEntry<string,Type> = getAt(list,i);
+                        if element.key == memberName {
+                            memberReference = Optional.Some(element.value);
+                            memberIndex = i;
+                        }
+                        i = i + 1;
+                    }
+
+                    if memberReference matches None() {
+                        throw AssertError("cant find member " + memberName);
+                    } else matches Some(member) {
+                        let access = Access.Member(member, memberIndex);
+                        insert(compounds, access);
+                        typeRef.value = member;
+                    }
+                } else {
+                    throw AssertError("cant access a member from here");
+                }
+            } else if subName == "callAccess" {
+                let inType: Type = typeRef.value;
+                if inType matches Function(functionType) {
+                    let call = callAccess(CallableType.Function(functionType), subTerm, context);
+                    let access = Access.Call(call.returnType, call.arguments);
+                    insert(compounds, access);
+                    typeRef.value = call.returnType;
+                } else {
+                    throw AssertError("only call a function");
+                }
+            } else if subName == "arrayAccess" {
+                let inType: Type = typeRef.value;
+                if inType matches Array(subType) {
+                    let expr = exprFromNode(getNode(subTerm, "expression"), context);
+                    let access = Access.Array(subType, expr);
+                    insert(compounds, access);
+                    typeRef.value = subType;
+                } else {
+                    throw AssertError("cant array access a here");
+                }
+            } else {
+                throw AssertError("unknown access a here");
+            }
+        });
+    }
+    return AccessInfo(compounds, typeRef.value);
+}
+
+struct AccessInfo {
+    compounds: List<Access>
+    type: Type;
+}
 
 enum CallableType {
     Function(FunctionType);

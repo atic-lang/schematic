@@ -47,6 +47,9 @@ fn compileClosures(project: Project) -> string {
         if response.asmObj.usedRegisters < 0 {
             response.asmObj.usedRegisters = 0;
         }
+        if response.asmObj.usedRegisters > 250 {
+            print("Closure has to many registers (" + toString(response.asmObj.usedRegisters) + ")" + toString(func.count));
+        }
         insert(codes,  "registers " + toString(response.asmObj.usedRegisters));
         insert(codes,  "params " + toString(func.inputs.size));
 
@@ -80,6 +83,9 @@ fn compileUnit(unit: Unit) -> string {
         if response.asmObj.usedRegisters < 0 {
             response.asmObj.usedRegisters = 0;
         }
+        if response.asmObj.usedRegisters > 250 {
+            print(function.path.path + " has to many registers (" + toString(response.asmObj.usedRegisters) + ")");
+        } 
         insert(codes,  "registers " + toString(response.asmObj.usedRegisters));
         insert(codes,  "params " + toString(function.inputs.size));
 
@@ -237,6 +243,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
             }
         }
         Branch(branchStatement) -> {
+            let preStatements = info.usedRegisters;
             let condition = compileExpression(branchStatement.expression, info);
             let target = useLabel(info);
             let end = useLabel(info);
@@ -248,6 +255,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                     addLabel(target, info);
                     compileStatement(branchStatement.elseStatement, info);
                     addLabel(end, info);
+                    info.usedRegisters = preStatements;
                 }
                 Then(enumEntry, variables) -> {
                     let compareTarget = useRegister(info);
@@ -347,6 +355,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
 
             addInstruction(Instruction.Match(condition, endLabel, labelLookup), info);
 
+            let preStatements = info.usedRegisters;
             forEachBI(matchStatement.statements, fn (entry: EnumEntry, caseBranch: MatchCase) -> void {
                 if get(labelLookup, entry.index) matches Some(caseLabel) {
                     addLabel(caseLabel, info);
@@ -361,6 +370,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                     }
 
                     compileStatement(caseBranch.statement, info);
+                    info.usedRegisters = preStatements;
                     addInstruction(Instruction.Jump(endLabel), info);
                 } else {
                     throw AssertError("could not happen");
@@ -526,11 +536,11 @@ fn compileMember(member: Member, info: AsmObj) -> number {
         } else matches None() {
             throw AssertError("cant find variable for member " + var.name);
         }
-    } else if member.type matches Function(staticFunction, expressions) {
+    } else if member.type matches Function(staticFunction, expressions, accessList) {
         let functionRegister = useRegister(info);
         addInstruction(Instruction.LoadFunction(functionRegister, staticFunction.path.path), info);
 
-
+        //TODO accessList
         let argList = newList<number>();
         forEachI(expressions, fn (expr: Expression, index: number) -> void {
             let exprTarget = compileExpression(expr, info);
@@ -542,7 +552,35 @@ fn compileMember(member: Member, info: AsmObj) -> number {
 
         let targetRegister = useRegister(info);
         addInstruction(Instruction.InvokeFunction(targetRegister, functionRegister), info);
-        return targetRegister;
+
+        let src = Ref(targetRegister);
+        forEach(accessList, fn (access: Access) -> void {
+            match access {
+                Array(type, expression) -> {
+                    let exprTarget = compileExpression(expression, info);
+                    addInstruction(Instruction.LoadArray(src.value, src.value, exprTarget), info);
+                }
+                Call(type, expressions_) -> {
+
+                    let argListV = newList<number>();
+                    forEachI(expressions_, fn (expr: Expression, index: number) -> void {
+                        let exprTarget = compileExpression(expr, info);
+                        insert(argListV, exprTarget);
+                    });
+                    
+                    forEachI(argListV, fn (exprTarget: number, index: number) -> void {
+                        addInstruction(Instruction.Argument(index, exprTarget), info);
+                    });    
+
+                    addInstruction(Instruction.InvokeFunction(src.value, src.value), info);
+                }
+                Member(type, offset) -> {
+                    addInstruction(Instruction.LoadMember(src.value, src.value, offset), info);
+                }
+            }
+        });
+        return src.value;
+
     } else if member.type matches Initialisation(struct_, expressions) {
 
         let argList = newList<number>();

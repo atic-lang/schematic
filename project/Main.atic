@@ -17,11 +17,13 @@ use atic.schematic.Expression;
 fn main() {
     let defaultImports = newList<Path>();
     insert(defaultImports, Path("Core"));
+    let fileFormats = newList<string>();
+    insert(fileFormats, "atic");
     let project: Project = Project(
         newMap<string, PathEntry>(),
         "C:/Users/Moritz/Documents/Projects/java/atic/res/res2",
         newList<Unit>(),
-        ["atic"],
+        fileFormats,
         defaultImports,
         newList<RichFunction>()
     );
@@ -40,7 +42,7 @@ fn lexAndCheckProject(project: Project, rules: RuleSet) {
     project.units = units;
     forEach(files, fn (ref: string) -> void {
         project;
-        if containsArray(project.extensions, getExtension(ref)) {
+        if contains(project.extensions, getExtension(ref)) {
             let src: string = loadFile(ref);
             let path: Path = pathFromFiles(ref, project.file);
             let unit: Unit = Unit(
@@ -326,34 +328,9 @@ fn forFile(file: string, list: List<string>) {
     }
 }
 
-fn genTokenList() -> List<Token> {
+fn genTokenList2() -> List<Token> {
     let list: List<Token> = newList<Token>();
 
-    let A_comment: Token = genToken("#comment", "\\/\\/", "\\/\\/.*");
-    let A_whitespace: Token = genToken("#whitespace", "\\s", "\\s*");
-    let A_assign_arrow: Token = genToken("->", "->", "(-|->)");
-    let A_parentheses_o: Token = genToken("(", "\\(", "\\(");
-    let A_parentheses_c: Token = genToken(")", "\\)", "\\)");
-    let A_braces_o: Token = genToken("{", "\\{", "\\{");
-    let A_braces_c: Token = genToken("}", "\\}", "\\}");
-    let A_bracket_o: Token = genToken("[", "\\[", "\\[");
-    let A_bracket_c: Token = genToken("]", "\\]", "\\]");
-    let A_separator: Token = genToken(",", "\\,", "\\,");
-    let A_non_equals: Token = genToken("!=", "!=", "(!=|!)");
-    let A_equals: Token = genToken("==", "==", "(==|=)");
-    let A_smaller_equals: Token = genToken("<=", "<=", "(<=|<)");
-    let A_greater_equals: Token = genToken(">=", ">=", "(>=|>)");
-    let A_or: Token = genToken("||", "\\|\\|", "(\\||\\|\\|)");
-    let A_and: Token = genToken("&&", "\\&\\&", "(\\&|\\&\\&)");
-    let A_not: Token = genToken("!", "\\!", "\\!");
-    let A_plus: Token = genToken("+", "\\+", "(\\+)");
-    let A_minus: Token = genToken("-", "\\-", "(\\-)");
-    let A_mul: Token = genToken("*", "\\*", "(\\*)");
-    let A_div: Token = genToken("/", "\\/", "(\\/)");
-    let A_greater: Token = genToken("<", "<", "(<)");
-    let A_smaller: Token = genToken(">", ">", "(>)");
-    let A_string: Token = genToken("string", "\"", "");
-    let A_function: Token = genToken("fn", "fn\\b", "(fn|f)");
     let A_list: Token = genToken("lst", "lst\\b", "(l|ls|lst)");
     let A_let: Token = genToken("let", "let\\b", "(let|le|l)");
     let A_use: Token = genToken("use", "use\\b", "(use|us|e)");
@@ -382,31 +359,7 @@ fn genTokenList() -> List<Token> {
     let A_dot: Token = genToken(".", "\\.", "\\.");
     let A_assign: Token = genToken("=", "=", "=");
     let A_end_of_file: Token = genToken("EOF", "$a^", "$a^");
-    insert(list, A_comment);
-    insert(list, A_whitespace);
-    insert(list, A_assign_arrow);
-    insert(list, A_parentheses_o);
-    insert(list, A_parentheses_c);
-    insert(list, A_braces_o);
-    insert(list, A_braces_c);
-    insert(list, A_bracket_o);
-    insert(list, A_bracket_c);
-    insert(list, A_separator);
-    insert(list, A_non_equals);
-    insert(list, A_equals);
-    insert(list, A_smaller_equals);
-    insert(list, A_greater_equals);
-    insert(list, A_or);
-    insert(list, A_and);
-    insert(list, A_not);
-    insert(list, A_plus);
-    insert(list, A_minus);
-    insert(list, A_mul);
-    insert(list, A_div);
-    insert(list, A_greater);
-    insert(list, A_smaller);
-    insert(list, A_string);
-    insert(list, A_function);
+
     insert(list, A_list);
     insert(list, A_let);
     insert(list, A_use);
@@ -435,6 +388,68 @@ fn genTokenList() -> List<Token> {
     insert(list, A_dot);
     insert(list, A_assign);
     insert(list, A_end_of_file);
+
+    return list;
+}
+
+fn genTokenList() -> List<Token> {
+    let list: List<Token> = newList<Token>();
+
+    let A_comment: Token = genToken("#comment", "\\/\\/", "\\/\\/.*");
+    let A_whitespace: Token = genToken("#whitespace", "\\s", "\\s*");
+    let A_assign_arrow: Token = genToken("->", "->", "(-|->)");
+    let A_parentheses_o: Token = genToken("(", "\\(", "\\(");
+    let A_parentheses_c: Token = genToken(")", "\\)", "\\)");
+    let A_braces_o: Token = genToken("{", "\\{", "\\{");
+    let A_braces_c: Token = genToken("}", "\\}", "\\}");
+    let A_bracket_o: Token = genToken("[", "\\[", "\\[");
+    let A_bracket_c: Token = genToken("]", "\\]", "\\]");
+    let A_separator: Token = genToken(",", "\\,", "\\,");
+    let A_non_equals: Token = genToken("!=", "!=", "(!=|!)");
+    let A_equals: Token = genToken("==", "==", "(==|=)");
+    let A_smaller_equals: Token = genToken("<=", "<=", "(<=|<)");
+    let A_greater_equals: Token = genToken(">=", ">=", "(>=|>)");
+    let A_or: Token = genToken("||", "\\|\\|", "(\\||\\|\\|)");
+    let A_and: Token = genToken("&&", "\\&\\&", "(\\&|\\&\\&)");
+    let A_not: Token = genToken("!", "\\!", "\\!");
+    let A_plus: Token = genToken("+", "\\+", "(\\+)");
+    let A_minus: Token = genToken("-", "\\-", "(\\-)");
+    let A_mul: Token = genToken("*", "\\*", "(\\*)");
+    let A_div: Token = genToken("/", "\\/", "(\\/)");
+    let A_greater: Token = genToken("<", "<", "(<)");
+    let A_smaller: Token = genToken(">", ">", "(>)");
+    let A_string: Token = genToken("string", "\"", "");
+    let A_function: Token = genToken("fn", "fn\\b", "(fn|f)");
+    
+    
+    insert(list, A_comment);
+    insert(list, A_whitespace);
+    insert(list, A_assign_arrow);
+    insert(list, A_parentheses_o);
+    insert(list, A_parentheses_c);
+    insert(list, A_braces_o);
+    insert(list, A_braces_c);
+    insert(list, A_bracket_o);
+    insert(list, A_bracket_c);
+    insert(list, A_separator);
+    insert(list, A_non_equals);
+    insert(list, A_equals);
+    insert(list, A_smaller_equals);
+    insert(list, A_greater_equals);
+    insert(list, A_or);
+    insert(list, A_and);
+    insert(list, A_not);
+    insert(list, A_plus);
+    insert(list, A_minus);
+    insert(list, A_mul);
+    insert(list, A_div);
+    insert(list, A_greater);
+    insert(list, A_smaller);
+    insert(list, A_string);
+    insert(list, A_function);
+
+
+    addAll(list, genTokenList2());
 
     return list;
 }

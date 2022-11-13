@@ -363,7 +363,6 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
     if !flag {
         let copyContext4 = contextCopy(context);
         stmt = statementFromNode(getNode(node, "statement"), copyContext4);
-        print("define again")
     }
 
 
