@@ -116,9 +116,6 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
             }
         }
     });
-    forEach(usages, fn (var: Variable) -> void {
-        print(var.name + " is in anon function");
-    }); 
 
     let func = RichFunction(statement, inputs, returnType, usages, context.environment.project.closures.size);
     insert(context.environment.project.closures, func);

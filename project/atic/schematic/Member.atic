@@ -139,7 +139,7 @@ fn memberFromTree(node: Node, context: Context) -> Member {
     } else {
         let pathOption = askFor(context, Path(startID));
         if pathOption matches None() {
-            throw AssertError("cant find " + startID);
+            throw AssertError("cant find F " + startID);
         } else matches Some(pathEntry) {
             match pathEntry {
                 Function(staticFunction) -> {

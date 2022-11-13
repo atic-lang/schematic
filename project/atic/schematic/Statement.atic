@@ -49,6 +49,13 @@ struct BranchStatement {
     expression: Expression;
     thenStatement: Statement;
     elseStatement: Statement;
+    branchMatch: BranchMatch;
+}
+
+enum BranchMatch {
+    None();
+    Then(EnumEntry, List<Variable>);
+    ThenElse(EnumEntry, List<Variable>, EnumEntry, List<Variable>);
 }
 
 struct DeclarationStatement {
@@ -128,7 +135,7 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
                     insert(types, substitute(type, lookup));
                 });
                 if types.size != names.size {
-                    throw AssertError("expected " + toString(types.size) + " number of arguments");
+                    throw AssertError("expected " + toString(types.size) + " number of arguments match for " + enumEntry.name);
                 }
                 let copyContext = contextCopy(context);
                 let newVariables = newList<Variable>();
@@ -219,7 +226,7 @@ fn throwFromTree(node: Node, context: Context) -> ThrowStatement {
     let path = newPathNode(getNode(node, "nChain"));
     let query = askFor(context, path);
     if query matches None() {
-        throw AssertError("cant find " + path.path);
+        throw AssertError("cant find B" + path.path);
     } else matches Some(queryObj) {
         if queryObj matches Interface(mStruct) {
             if !mStruct.properties.isException {
@@ -277,18 +284,21 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                     insert(types, substitute(type, lookup));
                 });
                 if types.size != names.size {
-                    throw AssertError("expected " + toString(types.size) + " number of arguments");
+                    throw AssertError("expected " + toString(types.size) + " number of arguments in branch " + enumEntry.name);
                 }
                 let copyContext = contextCopy(context);
+                let matchVariables = newList<Variable>();
 
                 forEachI(types, fn (type: Type, index: number) -> void {
                     let name: string = getAt(names, index);
                     let variable = Variable(name, type, Location.Match(), Modifier.Final(), Optional.None<Variable>());
                     insert(copyContext.variables, variable);
+                    insert(matchVariables, variable);
                 });
-
                 stmt = statementFromNode(getNode(node, "statement"), copyContext);
 
+                let otherEnumEntry = Optional.None<EnumEntry>();
+                let otherVariables = newList<Variable>();
                 if isPresent(elsePart, "elseStatement") {
                     let elseBranch = getNode(elsePart, "elseStatement");
                     let elseMatches = getNode(elseBranch, "matches");
@@ -302,7 +312,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                         if otherFind matches None() {
                             throw AssertError("could not find else enum entry for name " + optionName);
                         } else matches Some(elseMatch) {
-
+                            otherEnumEntry = Optional.Some(elseMatch);
                             if elseMatch.index == enumEntry.index {
                                 throw AssertError("else match part matches with if part");
                             } else {
@@ -317,17 +327,18 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                                 let otherLookup = createLookupEnum(enumImpl);
                                 let otherTypes = newList<Type>();
                                 forEach(elseMatch.components, fn (type: Type) -> void {
-                                    insert(types, substitute(type, otherLookup));
+                                    insert(otherTypes, substitute(type, otherLookup));
                                 });
 
                                 if otherTypes.size != otherNames.size {
-                                    throw AssertError("expected " + toString(types.size) + " number of arguments");
+                                    throw AssertError("expected " + toString(types.size) + " number of arguments in else branch " + enumEntry.name);
                                 }
 
                                 forEachI(otherTypes, fn (type: Type, index: number) -> void {
                                     let name: string = getAt(otherNames, index);
                                     let variable = Variable(name, type, Location.Match(), Modifier.Final(), Optional.None<Variable>());
-                                    insert(copyContext.variables, variable);
+                                    insert(copyContext3.variables, variable);
+                                    insert(otherVariables, variable);
                                 });
 
                                 elseStmt = statementFromNode(getNode(elseBranch, "statement"), copyContext3);
@@ -341,14 +352,18 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                         flag = true;
                     }
                 }
-
-                return BranchStatement(expr, stmt, elseStmt);
+                if otherEnumEntry matches Some(other) {
+                    return BranchStatement(expr, stmt, elseStmt, BranchMatch.ThenElse(enumEntry, matchVariables, other, otherVariables));
+                } else matches None() {
+                    return BranchStatement(expr, stmt, elseStmt, BranchMatch.Then(enumEntry, matchVariables));
+                }
             }
         } else throw AssertError("expected a match expression");
     }
     if !flag {
         let copyContext4 = contextCopy(context);
         stmt = statementFromNode(getNode(node, "statement"), copyContext4);
+        print("define again")
     }
 
 
@@ -361,7 +376,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
         elseStmt = statementFromNode(getNode(elseBranch, "statement"), context);
     }
 
-    return BranchStatement(expr, stmt, elseStmt);
+    return BranchStatement(expr, stmt, elseStmt, BranchMatch.None());
 }
 
 fn whileFromTree(node: Node, context: Context) -> WhileStatement {

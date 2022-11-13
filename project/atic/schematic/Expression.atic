@@ -152,11 +152,13 @@ fn boolFromNode(node: Node, context: Context) -> BoolExpression {
     if isPresent(right, "boolArithmeticFunc") {
         let function = getNode(right,"boolArithmeticFunc");
         let rightElement = boolFromNode(getNode(right, "boolArithmetic"), context);
-        let operator =  OperatorFromTree(function);
+        let operator = OperatorFromTree(function);
         let leftType = getCompExprType(expression);
         let rightType = getBoolExprType(rightElement);
-        assertExprType(Type.Primitive("bool"), leftType, "left side is not a boolean" + toString(operator));
-        assertExprType(Type.Primitive("bool"), rightType, "right side is not a boolean" + toString(operator));
+        assertExprType(Type.Primitive("bool"), leftType, "left side is not a boolean" + 
+            toString(operator));
+        assertExprType(Type.Primitive("bool"), rightType, "right side is not a boolean" + 
+            toString(operator));
 
         return BoolExpression.Implemented(expression, operator, rightElement);
     } else {

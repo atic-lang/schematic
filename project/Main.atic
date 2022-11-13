@@ -18,7 +18,7 @@ fn main() {
     let defaultImports = newList<Path>();
     insert(defaultImports, Path("Core"));
     let project: Project = Project(
-        newMap<string,PathEntry>(),
+        newMap<string, PathEntry>(),
         "C:/Users/Moritz/Documents/Projects/java/atic/res/res2",
         newList<Unit>(),
         ["atic"],
@@ -26,9 +26,9 @@ fn main() {
         newList<RichFunction>()
     );
     let src: string = loadFile("C:/Users/Moritz/Documents/Projects/java/atic/res/res2/testGrammar.txt");
-    let ruleSet = generateRuleSet(split(src,"\n"));
+    let ruleSet = generateRuleSet(split(src, "\n"));
     src = "";
-    lexAndCheckProject(project,ruleSet);
+    lexAndCheckProject(project, ruleSet);
     compileProject(project, "C:/Users/Moritz/Documents/Projects/java/atic/res/res2/out");
 }
 
