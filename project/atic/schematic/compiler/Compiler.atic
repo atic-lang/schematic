@@ -240,12 +240,72 @@ fn compileStatement(statement: Statement, info: AsmObj) {
             let condition = compileExpression(branchStatement.expression, info);
             let target = useLabel(info);
             let end = useLabel(info);
-            addInstruction(Instruction.JumpIfNot(condition, target), info);
-            compileStatement(branchStatement.thenStatement, info);
-            addInstruction(Instruction.Jump(end), info);
-            addLabel(target, info);
-            compileStatement(branchStatement.elseStatement, info);
-            addLabel(end, info);
+            match branchStatement.branchMatch {
+                None() -> {
+                    addInstruction(Instruction.JumpIfNot(condition, target), info);
+                    compileStatement(branchStatement.thenStatement, info);
+                    addInstruction(Instruction.Jump(end), info);
+                    addLabel(target, info);
+                    compileStatement(branchStatement.elseStatement, info);
+                    addLabel(end, info);
+                }
+                Then(enumEntry, variables) -> {
+                    let compareTarget = useRegister(info);
+                    addInstruction(Instruction.LoadEnumType(compareTarget, condition), info);
+                    let indexTarget = useRegister(info);
+                    addInstruction(Instruction.LoadConst(indexTarget, enumEntry.index), info);
+                    addInstruction(Instruction.Equals(compareTarget, indexTarget, compareTarget), info);
+                    addInstruction(Instruction.JumpIfNot(compareTarget, target), info);
+
+                    if variables.size > 0 {
+                        let destructStart = useRegister(info);
+                        info.usedRegisters = info.usedRegisters + (variables.size-1);
+                        addInstruction(Instruction.CopyEnumMember(destructStart, condition, variables.size), info);
+                        forEachI(variables, fn (variable: Variable, index: number) -> void {
+                            put(info.registers, variable, destructStart + index);
+                        }); 
+                    }   
+
+                    compileStatement(branchStatement.thenStatement, info);
+
+                    addInstruction(Instruction.Jump(end), info);
+                    addLabel(target, info);
+                    compileStatement(branchStatement.elseStatement, info);
+                    addLabel(end, info);
+                }
+                ThenElse(enumEntry,variables, otherEnumEntry, otherVariables) -> {
+                    let compareTarget = useRegister(info);
+                    addInstruction(Instruction.LoadEnumType(compareTarget, condition), info);
+                    let indexTarget = useRegister(info);
+                    addInstruction(Instruction.LoadConst(indexTarget, enumEntry.index), info);
+                    addInstruction(Instruction.Equals(compareTarget, indexTarget, compareTarget), info);
+                    addInstruction(Instruction.JumpIfNot(compareTarget, target), info);
+
+                    if variables.size > 0 {
+                        let destructStart = useRegister(info);
+                        info.usedRegisters = info.usedRegisters + (variables.size-1);
+                        addInstruction(Instruction.CopyEnumMember(destructStart, condition, variables.size), info);
+                        forEachI(variables, fn (variable: Variable, index: number) -> void {
+                            put(info.registers, variable, destructStart + index);
+                        }); 
+                    }   
+
+                    compileStatement(branchStatement.thenStatement, info);
+                    addInstruction(Instruction.Jump(end), info);
+                    addLabel(target, info);
+                    if otherVariables.size > 0 {
+                        let destructStart = useRegister(info);
+                        info.usedRegisters = info.usedRegisters + (otherVariables.size-1);
+                        addInstruction(Instruction.CopyEnumMember(destructStart, condition, otherVariables.size), info);
+                        forEachI(otherVariables, fn (variable: Variable, index: number) -> void {
+                            put(info.registers, variable, destructStart + index);
+                        }); 
+                    } 
+                    compileStatement(branchStatement.elseStatement, info);
+                    addLabel(end, info);
+                }
+            }
+           
         }
         Declaration(declarationStatement) -> {
             let expr = declarationStatement.expression;
