@@ -64,10 +64,9 @@ fn testSentence(masterRule: Rule, sentence: Sentence, stream: TokenStream<TokenR
 
         if entry.literal != "" {
              let record: TokenRecord = current(stream);
-
+                
              if(entry.literal == record.token.alias) {
                 if !entry.isHidden {
-                    //nodes.add(this.genLeaf(token));
                     let nodeB: Node =  Node(record,"",true,newList<Node>());
                     insert(nodes,nodeB);
                 }

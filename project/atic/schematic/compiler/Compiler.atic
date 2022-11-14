@@ -30,7 +30,7 @@ fn compileProject(project: Project, outFile: string) -> CompiledProject {
     });
     codeStr.value = codeStr.value + compileClosures(project) + "\n";
 
-    saveFile(outFile + "/out.mini", codeStr.value + codeStart);
+    saveFile(outFile + "/out.aticm", codeStr.value + codeStart);
 
     return CompiledProject(project);
 }
@@ -44,13 +44,13 @@ fn compileClosures(project: Project) -> string {
         forEach(response.list, fn(instruction: InfoObject) -> void {
             insert(codes, infoObjecttoString(instruction));
         }); 
-        if response.asmObj.usedRegisters < 0 {
-            response.asmObj.usedRegisters = 0;
+        if response.asmObj.maxRegisters < 0 {
+            response.asmObj.maxRegisters = 0;
         }
-        if response.asmObj.usedRegisters > 250 {
-            print("Closure has to many registers (" + toString(response.asmObj.usedRegisters) + ")" + toString(func.count));
+        if response.asmObj.maxRegisters > 240 {
+            print("Closure has to many registers (" + toString(response.asmObj.maxRegisters) + ")" + toString(func.count));
         }
-        insert(codes,  "registers " + toString(response.asmObj.usedRegisters));
+        insert(codes,  "registers " + toString(response.asmObj.maxRegisters + 4));
         insert(codes,  "params " + toString(func.inputs.size));
 
         insert(codes, "end\n");
@@ -80,13 +80,13 @@ fn compileUnit(unit: Unit) -> string {
         forEach(response.list, fn(instruction: InfoObject) -> void {
             insert(codes, infoObjecttoString(instruction));
         }); 
-        if response.asmObj.usedRegisters < 0 {
-            response.asmObj.usedRegisters = 0;
+        if response.asmObj.maxRegisters < 0 {
+            response.asmObj.maxRegisters = 0;
         }
-        if response.asmObj.usedRegisters > 250 {
-            print(function.path.path + " has to many registers (" + toString(response.asmObj.usedRegisters) + ")");
+        if response.asmObj.maxRegisters > 240 {
+            print(function.path.path + " has to many registers (" + toString(response.asmObj.maxRegisters) + ")");
         } 
-        insert(codes,  "registers " + toString(response.asmObj.usedRegisters));
+        insert(codes,  "registers " + toString(response.asmObj.maxRegisters + 4));
         insert(codes,  "params " + toString(function.inputs.size));
 
         insert(codes, "end\n");
@@ -120,6 +120,7 @@ struct AsmObj {
     instructions: List<InfoObject>;
     usedRegisters: number;
     usedLabels: number;
+    maxRegisters: number;
 }
 
 struct CompilationClosure {
@@ -140,7 +141,7 @@ struct CompileResponse {
 fn compileClosure(function: RichFunction) -> CompileResponse {
     let list = newList<InfoObject>();
     let registerMap = newMap<Variable,number>(); 
-    let info = AsmObj(registerMap, list, -1, 0);
+    let info = AsmObj(registerMap, list, -1, 0, -1);
 
     forEach(function.inputs, fn (input: Variable) -> void {
         let target = useRegister(info);
@@ -160,7 +161,7 @@ fn compileClosure(function: RichFunction) -> CompileResponse {
 fn compileFunction(function: StaticFunction) -> CompileResponse {
     let list = newList<InfoObject>();
     let registerMap = newMap<Variable,number>(); 
-    let info = AsmObj(registerMap, list, -1, 0);
+    let info = AsmObj(registerMap, list, -1, 0, -1);
 
     forEach(function.inputs, fn (input: Variable) -> void {
         let target = useRegister(info);
@@ -272,6 +273,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                         forEachI(variables, fn (variable: Variable, index: number) -> void {
                             put(info.registers, variable, destructStart + index);
                         }); 
+                        info.maxRegisters = maxU(info.usedRegisters, info.maxRegisters);
                     }   
 
                     compileStatement(branchStatement.thenStatement, info);
@@ -296,6 +298,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                         forEachI(variables, fn (variable: Variable, index: number) -> void {
                             put(info.registers, variable, destructStart + index);
                         }); 
+                        info.maxRegisters = maxU(info.usedRegisters, info.maxRegisters);
                     }   
 
                     compileStatement(branchStatement.thenStatement, info);
@@ -308,6 +311,7 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                         forEachI(otherVariables, fn (variable: Variable, index: number) -> void {
                             put(info.registers, variable, destructStart + index);
                         }); 
+                        info.maxRegisters = maxU(info.usedRegisters, info.maxRegisters);
                     } 
                     compileStatement(branchStatement.elseStatement, info);
                     addLabel(end, info);
@@ -341,6 +345,17 @@ fn compileStatement(statement: Statement, info: AsmObj) {
             addLabel(endLabel, info);
         } 
         Throw(throwStatement) -> {
+            let argList = newList<number>();
+            forEachI(throwStatement.arguments, fn (expr: Expression, index: number) -> void {
+                let exprTarget = compileExpression(expr, info);
+                insert(argList, exprTarget);
+            });
+            forEachI(argList, fn (exprTarget: number, index: number) -> void {
+                addInstruction(Instruction.Argument(index, exprTarget), info);
+            });
+            let targetRegister = useRegister(info);
+            addInstruction(Instruction.CreateStruct(targetRegister, throwStatement.struct_.path.path, throwStatement.struct_.members.size), info);
+            addInstruction(Instruction.Throw(targetRegister), info);
         }
         Match(matchStatement) -> {
             let endLabel = useLabel(info);
@@ -367,9 +382,11 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                         forEachI(caseBranch.variables, fn (variable: Variable, index: number) -> void {
                             put(info.registers, variable, destructStart + index);
                         }); 
+                        info.maxRegisters = maxU(info.usedRegisters, info.maxRegisters);
                     }
 
                     compileStatement(caseBranch.statement, info);
+                    info.maxRegisters = maxU(info.usedRegisters, info.maxRegisters);
                     info.usedRegisters = preStatements;
                     addInstruction(Instruction.Jump(endLabel), info);
                 } else {
@@ -423,7 +440,7 @@ fn compileComparisonExpression(compExpr: ComparisonExpression, info: AsmObj) -> 
         let right = compileComparisonExpression(selfExpr, info);
         let left = compileArithmeticExpression(nextExpr, info);
         let target = useRegister(info);
-        addInstruction(commandFromOperator(target, left, right, operator), info);
+        addInstruction(commandFromOperatorByType(target, left, right, operator, getCompExprType(selfExpr)), info);
         return target;
     } else matches Normal(nextExpr) {
         return compileArithmeticExpression(nextExpr, info);
@@ -435,7 +452,7 @@ fn compileArithmeticExpression(ariExpr: ArithmeticExpression, info: AsmObj) -> n
         let right = compileArithmeticExpression(selfExpr, info);
         let left = compileTerm(nextExpr, info);
         let target = useRegister(info);
-        addInstruction(commandFromOperator(target, left, right, operator), info);
+        addInstruction(commandFromOperatorByType(target, left, right, operator, getAriExprType(selfExpr)), info);
         return target;
     } else matches Normal(nextExpr) {
         return compileTerm(nextExpr, info);
@@ -634,8 +651,16 @@ fn useLabel(info: AsmObj) -> number {
     return current;
 }
 
+fn maxU(a: number, b: number) -> number {
+    if a > b {
+        return a;
+    }
+    return b;
+}
+
 fn useRegister(info: AsmObj) -> number {
     let current = info.usedRegisters + 1;
     info.usedRegisters = current;
+    info.maxRegisters = maxU(current, info.maxRegisters);
     return current;
 }

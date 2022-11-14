@@ -49,6 +49,10 @@ enum Instruction {
 
     Throw(number); //exception
 
+    Concat(number, number, number); //register target, String A ,String B
+    StringEquals(number, number, number); //register target, String A ,String B
+    StringNonEquals(number, number, number); //register target, String A ,String B
+
     Add(number, number, number); //Register Target, Register A, Register B;
     Subtract(number, number, number); //Register Target, Register A, Register B;
     Multiply(number, number, number); //Register Target, Register A, Register B;
@@ -77,6 +81,15 @@ fn instructionCode(instruction: Instruction) -> string {
                 lookUpString.value = lookUpString.value + toString(index) + ", " + toString(target_) + ", ";
             });
             return "Match: " + toString(src) + ", " + toString(target) + ", " + lookUpString.value;
+        }
+        Concat(target, a, b) -> {
+            return "Concat: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        StringEquals(target, a, b) -> {
+            return "StringEquals: " + toString(target) + ", " + toString(a) + ", " + toString(b);
+        }
+        StringNonEquals(target, a, b) -> {
+            return "StringNonEquals: " + toString(target) + ", " + toString(a) + ", " + toString(b);
         }
         CopyEnumMember(target, src, size) -> {
             return "CopyEnumMember: " + toString(target) + ", " + toString(src) + ", " + toString(size);
@@ -183,6 +196,23 @@ fn instructionCode(instruction: Instruction) -> string {
     }
 }
 
+
+fn commandFromOperatorByType(target: number, left: number, right: number, operator: Operator, type: Type) -> Instruction {
+
+    if testTypes(Type.Primitive("string"), type, emptyQuery()) {
+            if operator matches Equals() {
+                return Instruction.StringEquals(target, left, right);
+            } else if operator matches NonEquals() {
+                return Instruction.StringNonEquals(target, left, right);
+            } else if operator matches Add() {
+                return Instruction.Concat(target, left, right);
+            } 
+            throw AssertError("only +, != or == allowed on strings");
+    }
+    
+
+    return commandFromOperator(target, left, right, operator);
+}
 fn commandFromOperator(target: number, left: number, right: number, operator: Operator) -> Instruction {
     match operator {
         Add() -> {

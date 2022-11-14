@@ -156,7 +156,7 @@ fn findByName(list: List<Rule>, name: string) -> Rule {
          i = i + 1;
      }
 
-    throw NotFoundMsgError("cant find by" + name);
+    throw NotFoundMsgError("cant find rule " + name);
 }
 
 fn genReaderTokens() -> List<Token> {

@@ -238,12 +238,27 @@ struct CallAccess {
     returnType: Type;
 }
 
+fn collectArgList(node: Node, list: List<Node>) {
+    if isPresent(node, "endL") {
+        let endl = getNode(node,"endL");
+        let expr = getNode(node,"expression");
+        insert(list, expr);
+        if isPresent(endl, "argList") {
+            let argL = getNode(endl,"argList");
+            collectArgList(argL, list);
+        }
+    }
+}
+
 fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAccess {
     assertType(node, "callAccess");
 
     let genericsType: GenericsType = genericsTypeFromNode(getNode(node, "genericsOptionalType"), context);
     let exprList = newList<Expression>();
-    forEach(walk("expression", "argList", node), fn (subNode_: Node) -> void {
+    let walkList = newList<Node>();
+    collectArgList(getNode(node, "argList"), walkList);
+    // print(toString(walkList.size) + " arg size for " + toString(node.record.position.line));
+    forEach(walkList, fn (subNode_: Node) -> void {
         let expr = exprFromNode(subNode_, context);
         insert(exprList, expr);
     });

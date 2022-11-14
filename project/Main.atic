@@ -21,7 +21,7 @@ fn main() {
     insert(fileFormats, "atic");
     let project: Project = Project(
         newMap<string, PathEntry>(),
-        "C:/Users/Moritz/Documents/Projects/java/atic/res/res2",
+        "C:/Users/Moritz/Documents/Projects/atic/schematic/project",
         newList<Unit>(),
         fileFormats,
         defaultImports,
@@ -56,9 +56,7 @@ fn lexAndCheckProject(project: Project, rules: RuleSet) {
             );
 
             insert(units, unit);
-        } else {
-            print("Dont include " + ref);
-        }
+        } 
     });
 
     let tokenList: List<Token> = genTokenList();

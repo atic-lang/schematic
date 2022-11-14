@@ -167,3 +167,4 @@ native fn substring2(text: string,from: number, to: number) -> string {}
 native fn charAt(text: string,index: number) -> string {}
 native fn split(text: string,pattern: string) -> List<string> {}
 native fn ignoreCase(textA: string, textB: string) -> bool {}
+native fn <T> hash(obj: T) -> number {}
