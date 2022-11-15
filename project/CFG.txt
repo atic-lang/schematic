@@ -1,0 +1,129 @@
+//"?" will not add the string to the ast
+//"!" will throw an error, if the rule or token could not be captured
+entry := topList
+
+topList := top topList | top ||
+top := struct | topFunction | topDefinition | namespace | import | enumDef
+
+import := "use" nChain! endOfStatement!
+topFunction := properties "fn"? genericsOptional! id! "("?! declarationList! ")"?! returnType! blockStatement!
+topDefinition := "global"? id! ":"? type! "="?! expression! endOfStatement!
+namespace := id "{"? topList! "}"?!
+
+//top struct
+struct := properties "struct"? id! genericsOptional! "{"? structDefinitionList! "}"?!
+structDefinitionList := structDefinition structDefinitionList ||
+structDefinition := id ":"?! type! endOfStatement!
+
+
+returnType := "->"? type! ||
+
+enumDef := properties "enum"? id! genericsOptional! "{"?! enumEntries! "}"?! endOfStatement!
+enumEntries := enumEntry enumEntries! ||
+enumEntry := id "("?! typeList ")"?! endOfStatement!
+
+id := "keyword"
+
+declarationList := declaration ","? declarationList! | declaration ||
+declaration := id ":"? type!
+
+//type system
+type := classType | arrayType | functionType | inlineType
+typeList := type ","? typeList | type ||
+classType := nChain genericsOptionalType!
+arrayType := "lst"? type!
+functionType := "fn"? "("?! typeList! ")"?! "->"?! type!
+inlineType := "{"? structDefinitionList! "}"?!
+
+typeChain := "." id typeChain |  "." id ||
+nChain := id typeChain
+
+
+
+//properties
+properties := property properties | property ||
+property := native | strict | async | exception
+native := "native"
+exception := "exception"
+strict := "strict"
+async :=  "async"
+
+//statement
+statement := blockStatement | definitionStatement | returnStatement | whileStatement | matchStatement | branchStatement | assignStatement | singleExpression | tryStatement | throwStatement
+statementList := statement statementList ||
+blockStatement := "{"? statementList! "}"?!
+definitionStatement := typeOfDefinition id! typeOfVar! "="?! expression! endOfStatement!
+whileStatement := "while"? expression! statement!
+branchStatement := "if"? expression! matches! statement! endOfBranch!
+returnStatement := "return"? returnValue!
+returnValue := ";"? | expression endOfStatement! | endOfStatement!
+assignStatement := member "="? expression! endOfStatement!
+singleExpression := member endOfStatement!
+
+matches := "matches"? nChain! "("?! idList! ")"?! ||
+
+matchStatement := "match"? expression! "{"?! matchEntries! "}"?! endOfBranch!
+matchEntries := matchEntry matchEntries | matchEntry ||
+matchEntry := nChain "("?! idList ")"?! "->"?! statement!
+
+genericsOptional := generics ||
+generics := "<"? idList! ">"?!
+
+genericsOptionalType := genericsType ||
+genericsType := "<"? typeList ">"?
+
+tryStatement := "try"? nChain! statement! "else"! statement!
+throwStatement := "throw"? nChain! callAccess endOfStatement
+
+endOfStatement := ";"? ||
+
+elseStatement := "else"? matches! statement!
+endOfBranch := elseStatement ||
+
+typeOfDefinition := "let" | "const"
+typeOfVar := ":"? type! ||
+
+
+expression := function | boolArithmetic
+boolArithmetic := comparisonArithmetic boolRight!
+comparisonArithmetic := arithmetic comparisonRight!
+arithmetic := term arithmeticRight!
+term := factor termRight!
+factor := unary | not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | member
+
+
+boolRight := boolArithmeticFunc boolArithmetic ||
+comparisonRight := comparisonArithmeticFunc comparisonArithmetic ||
+arithmeticRight := arithmeticFunc arithmetic ||
+termRight := termFunc term ||
+
+string := "string"
+
+
+//factors
+unary := "-"? factor
+not := "!"? factor
+number := "number"
+boolLiteral := "false" | "true"
+
+//member
+member := id memberCompound | id
+memberCompound := varTerminal memberCompound | varTerminal
+varTerminal := memberAccess | callAccess | arrayAccess
+memberAccess := "."? id!
+callAccess := genericsOptionalType "("? argList! ")"?!
+arrayAccess := "["? expression! "]"?!
+argList := expression endL ||
+endL := ","? argList ||
+
+//operators
+termFunc := "*" | "/"
+arithmeticFunc := "+" | "-"
+comparisonArithmeticFunc := ">" | ">=" | "<" | "<=" | "==" | "!="
+boolArithmeticFunc := "&&" | "||"
+
+//functions
+function := richFunction
+//anonymousFunction := "fn"? "("? idList ")"?! "->"?! statement!
+richFunction := "fn"? "("?! declarationList ")"?! "->"?! Type! statement!
+idList := id ","? idList | id ||
