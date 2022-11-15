@@ -1,6 +1,13 @@
+define projectDir C:/Users/Moritz/Documents/Projects/atic/schematic/project
+define outDir C:/Users/Moritz/Documents/Projects/java/atic/res/res2/out/out
+define grammarFile C:/Users/Moritz/Documents/Projects/java/atic/res/res2/testGrammar.txt
+
+//define projectDir C:/atic/project
+//define outDir C:/out
+//define grammarFile C:/atic/CFG.txt
 
 fn atic.schematic.compiler.Commands.instructionCode
-	Match: 0.0, 1.0, 0.0, 2.0, 23.0, 3.0, 16.0, 4.0, 25.0, 5.0, 26.0, 6.0, 27.0, 7.0, 15.0, 8.0, 13.0, 9.0, 14.0, 10.0, 22.0, 11.0, 21.0, 12.0, 1.0, 13.0, 10.0, 14.0, 17.0, 15.0, 18.0, 16.0, 19.0, 17.0, 20.0, 18.0, 24.0, 19.0, 11.0, 20.0, 12.0, 21.0, 6.0, 22.0, 9.0, 23.0, 8.0, 24.0, 7.0, 25.0, 2.0, 26.0, 3.0, 27.0, 4.0, 28.0, 5.0, 29.0, 28.0, 30.0, 29.0, 31.0, 30.0, 32.0, 31.0, 33.0, 32.0, 34.0, 33.0, 35.0, 34.0, 36.0, 35.0, 37.0, 36.0, 38.0, 37.0, 39.0, 38.0, 40.0, 39.0, 41.0, 
+	Match: 0.0, 1.0, 0.0, 2.0, 23.0, 3.0, 16.0, 4.0, 25.0, 5.0, 26.0, 6.0, 27.0, 7.0, 15.0, 8.0, 13.0, 9.0, 14.0, 10.0, 22.0, 11.0, 21.0, 12.0, 1.0, 13.0, 10.0, 14.0, 17.0, 15.0, 18.0, 16.0, 19.0, 17.0, 20.0, 18.0, 24.0, 19.0, 11.0, 20.0, 12.0, 21.0, 6.0, 22.0, 9.0, 23.0, 8.0, 24.0, 7.0, 25.0, 2.0, 26.0, 3.0, 27.0, 4.0, 28.0, 5.0, 29.0, 28.0, 30.0, 29.0, 31.0, 30.0, 32.0, 31.0, 33.0, 32.0, 34.0, 33.0, 35.0, 34.0, 36.0, 35.0, 37.0, 36.0, 38.0, 37.0, 39.0, 38.0, 40.0, 39.0, 41.0,
 	#2.0
 	CopyEnumMember: 1.0, 0.0, 1.0
 	LoadFunction: 2.0, "Core.toString"
@@ -795,7 +802,7 @@ params 5.0
 end
 
 fn atic.schematic.compiler.Commands.commandFromOperator
-	Match: 3.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0, 7.0, 9.0, 8.0, 10.0, 9.0, 11.0, 10.0, 12.0, 11.0, 13.0, 
+	Match: 3.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0, 7.0, 9.0, 8.0, 10.0, 9.0, 11.0, 10.0, 12.0, 11.0, 13.0,
 	#2.0
 	Argument: 0.0, 0.0
 	Argument: 1.0, 1.0
@@ -982,7 +989,7 @@ params 1.0
 end
 
 fn atic.schematic.compiler.Compiler.infoObjecttoString
-	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 
+	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0,
 	#2.0
 	CopyEnumMember: 1.0, 0.0, 1.0
 	LoadFunction: 2.0, "atic.schematic.compiler.Commands.instructionCode"
@@ -1106,7 +1113,7 @@ params 1.0
 end
 
 fn atic.schematic.compiler.Compiler.compileStatement
-	Match: 0.0, 1.0, 0.0, 2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 5.0, 5.0, 6.0, 6.0, 7.0, 7.0, 8.0, 1.0, 9.0, 8.0, 10.0, 
+	Match: 0.0, 1.0, 0.0, 2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 5.0, 5.0, 6.0, 6.0, 7.0, 7.0, 8.0, 1.0, 9.0, 8.0, 10.0,
 	#2.0
 	CopyEnumMember: 2.0, 0.0, 1.0
 	LoadFunction: 3.0, "Core.forEach"
@@ -1168,7 +1175,7 @@ fn atic.schematic.compiler.Compiler.compileStatement
 	Argument: 0.0, 7.0
 	Argument: 1.0, 25.0
 	InvokeFunction: 31.0, 30.0
-	Match: 31.0, 19.0, 0.0, 20.0, 1.0, 21.0, 2.0, 22.0, 
+	Match: 31.0, 19.0, 0.0, 20.0, 1.0, 21.0, 2.0, 22.0,
 	#20.0
 	CopyEnumMember: 32.0, 31.0, 2.0
 	LoadFunction: 34.0, "atic.schematic.compiler.Compiler.compileExpression"
@@ -1231,7 +1238,7 @@ fn atic.schematic.compiler.Compiler.compileStatement
 	Argument: 0.0, 7.0
 	Argument: 1.0, 25.0
 	InvokeFunction: 35.0, 34.0
-	Match: 35.0, 23.0, 0.0, 24.0, 1.0, 25.0, 2.0, 26.0, 
+	Match: 35.0, 23.0, 0.0, 24.0, 1.0, 25.0, 2.0, 26.0,
 	#24.0
 	CopyEnumMember: 36.0, 35.0, 2.0
 	LoadFunction: 38.0, "atic.schematic.compiler.Compiler.compileExpression"
@@ -1293,7 +1300,7 @@ fn atic.schematic.compiler.Compiler.compileStatement
 	Argument: 0.0, 1.0
 	InvokeFunction: 10.0, 9.0
 	LoadMember: 11.0, 2.0, 3.0
-	Match: 11.0, 27.0, 0.0, 28.0, 1.0, 29.0, 2.0, 30.0, 
+	Match: 11.0, 27.0, 0.0, 28.0, 1.0, 29.0, 2.0, 30.0,
 	#28.0
 	LoadFunction: 12.0, "atic.schematic.compiler.Compiler.addInstruction"
 	Argument: 0.0, 6.0
@@ -1986,7 +1993,7 @@ params 2.0
 end
 
 fn atic.schematic.compiler.Compiler.compileFactor
-	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0, 
+	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0,
 	#2.0
 	CopyEnumMember: 2.0, 0.0, 1.0
 	LoadFunction: 3.0, "atic.schematic.compiler.Compiler.compileExpression"
@@ -2779,7 +2786,7 @@ end
 fn atic.schematic.Expression.factorUsage
 	LoadFunction: 1.0, "Core.newList"
 	InvokeFunction: 2.0, 1.0
-	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0, 
+	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0,
 	#2.0
 	CopyEnumMember: 3.0, 0.0, 1.0
 	LoadFunction: 4.0, "Core.addAll"
@@ -3735,7 +3742,7 @@ params 1.0
 end
 
 fn atic.schematic.Expression.getFactorType
-	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0, 
+	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0,
 	#2.0
 	CopyEnumMember: 1.0, 0.0, 1.0
 	LoadFunction: 2.0, "atic.schematic.Expression.getExprType"
@@ -4607,7 +4614,7 @@ fn atic.schematic.Member.memberUsages
 	LoadFunction: 1.0, "Core.newList"
 	InvokeFunction: 2.0, 1.0
 	LoadMember: 3.0, 0.0, 0.0
-	Match: 3.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 
+	Match: 3.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0,
 	#2.0
 	CopyEnumMember: 4.0, 3.0, 3.0
 	LoadFunction: 7.0, "Core.forEach"
@@ -4737,7 +4744,7 @@ fn atic.schematic.Member.memberFromTree
 	Jump: 4.0
 	#3.0
 	CopyEnumMember: 31.0, 25.0, 1.0
-	Match: 31.0, 5.0, 0.0, 6.0, 1.0, 7.0, 2.0, 8.0, 3.0, 9.0, 
+	Match: 31.0, 5.0, 0.0, 6.0, 1.0, 7.0, 2.0, 8.0, 3.0, 9.0,
 	#6.0
 	CopyEnumMember: 32.0, 31.0, 1.0
 	LoadConst: 33.0, 1.0
@@ -5883,7 +5890,7 @@ end
 fn atic.schematic.Statement.statementUsages
 	LoadFunction: 1.0, "Core.newList"
 	InvokeFunction: 2.0, 1.0
-	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0, 7.0, 9.0, 8.0, 10.0, 
+	Match: 0.0, 1.0, 0.0, 2.0, 1.0, 3.0, 2.0, 4.0, 3.0, 5.0, 4.0, 6.0, 5.0, 7.0, 6.0, 8.0, 7.0, 9.0, 8.0, 10.0,
 	#2.0
 	CopyEnumMember: 3.0, 0.0, 1.0
 	LoadFunction: 4.0, "Core.forEach"
@@ -8202,7 +8209,7 @@ params 1.0
 end
 
 fn atic.schematic.type.TypeSystem.testTypes
-	Match: 0.0, 1.0, 3.0, 2.0, 0.0, 3.0, 1.0, 4.0, 2.0, 5.0, 4.0, 6.0, 5.0, 7.0, 
+	Match: 0.0, 1.0, 3.0, 2.0, 0.0, 3.0, 1.0, 4.0, 2.0, 5.0, 4.0, 6.0, 5.0, 7.0,
 	#2.0
 	CopyEnumMember: 3.0, 0.0, 1.0
 	LoadFunction: 4.0, "Core.contains"
@@ -8660,7 +8667,7 @@ fn Main.main
 	InvokeFunction: 10.0, 8.0
 	LoadFunction: 11.0, "Core.newMap"
 	InvokeFunction: 12.0, 11.0
-	LoadString: 13.0, "C:/Users/Moritz/Documents/Projects/atic/schematic/project"
+	LoadString: 13.0, projectDir
 	LoadFunction: 14.0, "Core.newList"
 	InvokeFunction: 15.0, 14.0
 	LoadFunction: 16.0, "Core.newList"
@@ -8673,7 +8680,7 @@ fn Main.main
 	Argument: 5.0, 17.0
 	CreateStruct: 18.0, "atic.schematic.project.Project.Project", 6.0
 	LoadFunction: 19.0, "Core.loadFile"
-	LoadString: 20.0, "C:/Users/Moritz/Documents/Projects/java/atic/res/res2/testGrammar.txt"
+	LoadString: 20.0, grammarFile
 	Argument: 0.0, 20.0
 	InvokeFunction: 21.0, 19.0
 	LoadFunction: 22.0, "atic.schematic.lexer.GrammarReader.generateRuleSet"
@@ -8691,7 +8698,7 @@ fn Main.main
 	Argument: 1.0, 26.0
 	InvokeFunction: 29.0, 28.0
 	LoadFunction: 30.0, "atic.schematic.compiler.Compiler.compileProject"
-	LoadString: 31.0, "C:/Users/Moritz/Documents/Projects/java/atic/res/res2/out"
+	LoadString: 31.0, outDir
 	Argument: 0.0, 18.0
 	Argument: 1.0, 31.0
 	InvokeFunction: 32.0, 30.0
