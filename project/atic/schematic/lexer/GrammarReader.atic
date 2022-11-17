@@ -15,8 +15,7 @@ fn generateRuleSet(lines: List<string>) -> RuleSet {
         lineCount.value = lineCount.value + 1;
 
         let filtered: List<TokenRecord> = filter(result, fn (token: TokenRecord) -> bool {
-            if token.token.alias == "whitespace" return false;
-            else return true;
+            return token.token.alias != "whitespace";
         });
 
 

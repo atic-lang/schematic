@@ -46,11 +46,36 @@ struct RichFunction {
     count: number;
 }
 
+struct Generics {
+    types: List<GenericType>;
+}
+
+struct GenericsType {
+    types: List<Type>;
+}
+
+struct Properties {
+    isNative: bool;
+    isStrict: bool;
+    isAsync: bool;
+    isException: bool;
+}
+
 fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
     assertType(node, "richFunction");
     //TODO test collisions
     let inputs = newList<Variable>();
-    let inputVariable = newList<Variable>();
+    let copyContext = contextCopy(context);
+    copyContext.variables = newList<Variable>();
+
+    forEach(context.variables, fn (var: Variable) -> void {
+        let variableDef =  Variable(var.name, var.type, 
+            Location.Closure(),
+            Modifier.Final(),
+            Optional.Some(var));
+        addVariable(copyContext, variableDef);
+    });
+
     forEach(walk("declaration", "declarationList", node), fn (input: Node) -> void {
         let name = id(input);
         let typeNode = getNode(input, "type");
@@ -59,23 +84,17 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
             Modifier.Final(), 
             Optional.None<Variable>());
         insert(inputs, variable);
-        insert(inputVariable, variable);
+        addVariable(copyContext, variable);
     });
     let returnType = typeFromTree(getNode(node, "type"), context);
-    let copyContext = contextCopy(context);
 
-    forEach(context.variables, fn (var: Variable) -> void {
-        insert(inputVariable, Variable(var.name, var.type, 
-            Location.Closure(),
-            Modifier.Final(),
-            Optional.Some(var)));
-    });
-    copyContext.variables = inputVariable;
     copyContext.returnType = returnType;
 
     let statement = statementFromNode(getNode(node, "statement"), copyContext);
 
+   
     let returning = testForReturns(statement, false);
+    //todo duplicate funtion with main.atic
     if !returning {
         if testTypes(Type.Primitive("void"), returnType, emptyQuery()) {
             let emptyReturn = Statement.Return(ReturnStatement(Optional.None<Expression>()));
@@ -91,9 +110,15 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
             throw AssertError("incomplete code branching for closure function " + toString(node));
         }
     }
+    
+    let usageUnfilted = statementUsages(statement);
+    
+    // forEach(usageUnfilted, fn(var: Variable) -> void {
+        // print(var.name + " was captured");
+    // });  
+    
 
-
-    let usages = filter(statementUsages(statement), fn (var: Variable) -> bool {
+    let usages = filter(usageUnfilted, fn (var: Variable) -> bool {
         match var.location {
             Global() -> {
                 return false;
@@ -108,7 +133,23 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
                 if var.parent matches None() {
                     return false;
                 } else matches Some(parent) {
-                    return contains(context.variables, parent);
+                    let result = contains(context.variables, parent);
+                    //find good grammar for this
+                    if result { 
+                        return true;
+                    }
+                    let currentVariable = parent;
+                    while true {
+                        if currentVariable.parent matches Some(currentParent) {
+                            if contains(context.variables, currentParent) {
+                                return true;
+                            } 
+                            currentVariable = currentParent;
+                        } else { 
+                            return false;
+                        }
+                    }
+                    return false;
                 }
             }
             Match() -> {
@@ -116,17 +157,17 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
             }
         }
     });
+    //print("filtered");
+    // forEach(usages, fn(var: Variable) -> void {
+        // print(var.name + " was captured");
+    // });  
+    // print("end");
 
     let func = RichFunction(statement, inputs, returnType, usages, context.environment.project.closures.size);
     insert(context.environment.project.closures, func);
     return func;
 }
 
-
-
-struct Generics {
-    types: List<GenericType>;
-}
 
 fn genericsFromNode(node: Node) -> Generics {
     assertType(node,"genericsOptional");
@@ -145,11 +186,6 @@ fn genericsFromNode(node: Node) -> Generics {
     }
     return Generics(list);
 }
-
-struct GenericsType {
-    types: List<Type>;
-}
-
 
 
 fn genericsTypeFromNode(node: Node, context: Context) -> GenericsType {
@@ -175,12 +211,6 @@ fn doesContainName__(list: List<GenericType>, name: string) -> bool {
    return match_;
 }
 
-struct Properties {
-    isNative: bool;
-    isStrict: bool;
-    isAsync: bool;
-    isException: bool;
-}
 
 fn propertiesFromNode(node: Node) -> Properties {
     assertType(node,"properties");

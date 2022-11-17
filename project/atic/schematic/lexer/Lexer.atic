@@ -6,10 +6,12 @@ use atic.schematic.tokens.Tokenizer;
 use atic.schematic.tokens.TokenStream;
 use atic.schematic.lexer.GrammarReader;
 
-fn reverseRule(ruleSet: RuleSet, entry: string, records: List<TokenRecord>) -> Node {
+fn reverseRule(ruleSet: RuleSet, entry: string, records: List<TokenRecord>, usageMap: Map<string, number>) -> Node {
     let rule: Rule = findByName(ruleSet.rules, entry);
     let stream: TokenStream<TokenRecord> = generateTokenStream(records);
-    let nodeD: Optional<Node> = testRule(rule,stream)
+    let nodeD: Optional<Node> = testRule(rule,stream, usageMap)
+
+
     if nodeD matches None() {
         throw AssertError("could not parse");
     } else matches Some(node_) {
@@ -26,14 +28,14 @@ fn reverseRule(ruleSet: RuleSet, entry: string, records: List<TokenRecord>) -> N
 }
 
 
-fn testRule(rule: Rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
+fn testRule(rule: Rule, stream: TokenStream<TokenRecord>, usageMap: Map<string, number>) -> Optional<Node> {
     let list = rule.sentences;
     let i: number = 0;
     let s: number = list.size;
     while i < s {
         let sentence: Sentence = getAt(list,i);
         let index = stream.index;
-        let result = testSentence(rule, sentence,stream);
+        let result = testSentence(rule, sentence,stream, usageMap);
         if result matches Some(nodeC) {
             nodeC.name = rule.name;
             if hasEntriesLeft(stream) {
@@ -49,7 +51,14 @@ fn testRule(rule: Rule, stream: TokenStream<TokenRecord>) -> Optional<Node> {
 }
 
 
-fn testSentence(masterRule: Rule, sentence: Sentence, stream: TokenStream<TokenRecord>) -> Optional<Node> {
+fn testSentence(masterRule: Rule, sentence: Sentence, stream: TokenStream<TokenRecord>, usageMap: Map<string, number>) -> Optional<Node> {
+
+    let usage = 0;
+    if get(usageMap, masterRule.name) matches Some(curr) { 
+       usage = curr;
+    }
+    put(usageMap, masterRule.name, usage + 1);
+
     let nodes = newList<Node>();
     let list = sentence.entries;
     let i: number = 0;
@@ -64,6 +73,7 @@ fn testSentence(masterRule: Rule, sentence: Sentence, stream: TokenStream<TokenR
 
         if entry.literal != "" {
              let record: TokenRecord = current(stream);
+
                 
              if(entry.literal == record.token.alias) {
                 if !entry.isHidden {
@@ -79,7 +89,7 @@ fn testSentence(masterRule: Rule, sentence: Sentence, stream: TokenStream<TokenR
                 return Optional.None<Node>();
              }
         } else if entry.rule matches Some(rule) {
-            let option: Optional<Node> = testRule(rule,stream);
+            let option: Optional<Node> = testRule(rule,stream, usageMap);
             if option matches None() {
                 if entry.isConcrete {
                     let record: TokenRecord = current(stream);

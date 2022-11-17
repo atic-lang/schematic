@@ -77,7 +77,7 @@ struct WhileStatement {
 }
 
 fn statementFromNode(node: Node, context: Context) -> Statement {
-    assertType(node,"statement");
+    assertType(node, "statement");
     let child_ = child(node);
     let name = child_.name;
 
@@ -103,7 +103,7 @@ fn statementFromNode(node: Node, context: Context) -> Statement {
         return Statement.Match(matchFromTree(child_, context));
     }
 
-    throw AssertError(name + " is not impl");
+    throw AssertError(name + " statement is not impl");
 }
 
 fn matchFromTree(node: Node, context: Context) -> MatchStatement {
@@ -143,7 +143,7 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
                     let name: string = getAt(names, index);
                     let variable = Variable(name, type,Location.Match(), Modifier.Final(), 
                                                                  Optional.None<Variable>());
-                    insert(copyContext.variables, variable);
+                    addVariable(copyContext, variable);                                            
                     insert(newVariables, variable);
                 });
 
@@ -163,63 +163,6 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
     }
 }
 
-
-
-fn statementUsages(statement: Statement) -> List<Variable> {
-    let variables = newList<Variable>();
-
-    match statement {
-        Block(blockStatement) -> {
-            forEach(blockStatement.list, fn (subStatement: Statement) -> void {
-                addAll(variables, statementUsages(subStatement));
-            });
-            return variables;
-        }
-        Throw(throwStatement) -> {
-            forEach(throwStatement.arguments, fn (expression: Expression) -> void {
-                addAll(variables, expressionUsages(expression));
-            });
-            return variables;
-        }
-        Assign(assignStatement) -> {
-            addAll(variables, expressionUsages(assignStatement.expression));
-            addAll(variables, memberUsages(assignStatement.member));
-            return variables;
-        }
-        Branch(branchStatement) -> {
-            addAll(variables, expressionUsages(branchStatement.expression));
-            addAll(variables, statementUsages(branchStatement.thenStatement));
-            addAll(variables, statementUsages(branchStatement.elseStatement));
-            return variables;
-        }
-        Declaration(declarationStatement) -> {
-            addAll(variables, expressionUsages(declarationStatement.expression));
-            return variables;
-        }
-        Return(returnStatement) -> {
-            if returnStatement.expression matches Some(expression) {
-                addAll(variables, expressionUsages(expression));
-            }
-            return variables;
-        }
-        Single(singleStatement) -> {
-            addAll(variables, memberUsages(singleStatement.member));
-            return variables;
-        }
-        While(whileStatement) -> {
-            addAll(variables, expressionUsages(whileStatement.expression));
-            addAll(variables, statementUsages(whileStatement.statement));
-            return variables;
-        }
-        Match(matchStatement) -> {
-            addAll(variables, expressionUsages(matchStatement.expression));
-            forEachBI(matchStatement.statements, fn (enum_: EnumEntry, matchCase: MatchCase) -> void {
-                addAll(variables, statementUsages(matchCase.statement));
-            });
-            return variables;
-        }
-    }
-}
 
 fn throwFromTree(node: Node, context: Context) -> ThrowStatement {
     assertType(node, "throwStatement");
@@ -292,7 +235,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                 forEachI(types, fn (type: Type, index: number) -> void {
                     let name: string = getAt(names, index);
                     let variable = Variable(name, type, Location.Match(), Modifier.Final(), Optional.None<Variable>());
-                    insert(copyContext.variables, variable);
+                    addVariable(copyContext, variable);
                     insert(matchVariables, variable);
                 });
                 stmt = statementFromNode(getNode(node, "statement"), copyContext);
@@ -337,7 +280,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                                 forEachI(otherTypes, fn (type: Type, index: number) -> void {
                                     let name: string = getAt(otherNames, index);
                                     let variable = Variable(name, type, Location.Match(), Modifier.Final(), Optional.None<Variable>());
-                                    insert(copyContext3.variables, variable);
+                                    addVariable(copyContext, variable); 
                                     insert(otherVariables, variable);
                                 });
 
@@ -441,4 +384,62 @@ fn blockFromTree(node: Node, context: Context) -> BlockStatement {
         insert(statements, statementFromNode(ref, copyContext));
     });
     return BlockStatement(statements);
+}
+
+
+
+fn statementUsages(statement: Statement) -> List<Variable> {
+    let variables = newList<Variable>();
+
+    match statement {
+        Block(blockStatement) -> {
+            forEach(blockStatement.list, fn (subStatement: Statement) -> void {
+                addAll(variables, statementUsages(subStatement));
+            });
+            return variables;
+        }
+        Throw(throwStatement) -> {
+            forEach(throwStatement.arguments, fn (expression: Expression) -> void {
+                addAll(variables, expressionUsages(expression));
+            });
+            return variables;
+        }
+        Assign(assignStatement) -> {
+            addAll(variables, expressionUsages(assignStatement.expression));
+            addAll(variables, memberUsages(assignStatement.member));
+            return variables;
+        }
+        Branch(branchStatement) -> {
+            addAll(variables, expressionUsages(branchStatement.expression));
+            addAll(variables, statementUsages(branchStatement.thenStatement));
+            addAll(variables, statementUsages(branchStatement.elseStatement));
+            return variables;
+        }
+        Declaration(declarationStatement) -> {
+            addAll(variables, expressionUsages(declarationStatement.expression));
+            return variables;
+        }
+        Return(returnStatement) -> {
+            if returnStatement.expression matches Some(expression) {
+                addAll(variables, expressionUsages(expression));
+            }
+            return variables;
+        }
+        Single(singleStatement) -> {
+            addAll(variables, memberUsages(singleStatement.member));
+            return variables;
+        }
+        While(whileStatement) -> {
+            addAll(variables, expressionUsages(whileStatement.expression));
+            addAll(variables, statementUsages(whileStatement.statement));
+            return variables;
+        }
+        Match(matchStatement) -> {
+            addAll(variables, expressionUsages(matchStatement.expression));
+            forEachBI(matchStatement.statements, fn (enum_: EnumEntry, matchCase: MatchCase) -> void {
+                addAll(variables, statementUsages(matchCase.statement));
+            });
+            return variables;
+        }
+    }
 }

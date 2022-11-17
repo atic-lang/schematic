@@ -1,9 +1,10 @@
 //"?" will not add the string to the ast
 //"!" will throw an error, if the rule or token could not be captured
+//"#" will not capture the token
 entry := topList
 
 topList := top topList | top ||
-top := struct | topFunction | topDefinition | namespace | import | enumDef
+top := struct | topFunction | import | enumDef
 
 import := "use" nChain! endOfStatement!
 topFunction := properties "fn"? genericsOptional! id! "("?! declarationList! ")"?! returnType! blockStatement!
@@ -49,7 +50,7 @@ strict := "strict"
 async :=  "async"
 
 //statement
-statement := blockStatement | definitionStatement | returnStatement | whileStatement | matchStatement | branchStatement | assignStatement | singleExpression | tryStatement | throwStatement
+statement := blockStatement | definitionStatement | returnStatement |  whileStatement |  matchStatement |  branchStatement | assignStatement | singleExpression |  tryStatement | throwStatement
 statementList := statement statementList ||
 blockStatement := "{"? statementList! "}"?!
 definitionStatement := typeOfDefinition id! typeOfVar! "="?! expression! endOfStatement!
@@ -89,7 +90,7 @@ boolArithmetic := comparisonArithmetic boolRight!
 comparisonArithmetic := arithmetic comparisonRight!
 arithmetic := term arithmeticRight!
 term := factor termRight!
-factor := unary | not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | member
+factor :=  unary |  not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | member
 
 
 boolRight := boolArithmeticFunc boolArithmetic ||

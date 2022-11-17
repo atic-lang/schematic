@@ -42,15 +42,11 @@ enum Factor {
     Member(Member);
 }
 
-struct Complex {
-
-}
-
 fn expressionUsages(expression: Expression) -> List<Variable> {
     if expression matches Bool(boolExpr) {
         return boolUsages(boolExpr);
     } else matches Function(func) {
-        return newList<Variable>();
+        return func.captures;
     }
 }
 
@@ -350,10 +346,10 @@ fn getFactorType(expr: Factor) -> Type {
         Expression(expression) -> {
             return getExprType(expression);
         }
-        Number(_) -> {
+        Number(num) -> {
             return Type.Primitive("number");
         }
-        BoolLiteral(_) -> {
+        BoolLiteral(lit) -> {
             return Type.Primitive("bool");
         }
         Not(factor) -> {
@@ -362,7 +358,7 @@ fn getFactorType(expr: Factor) -> Type {
         NegUnary(factor) -> {
             return getFactorType(factor);
         }
-        String(_) -> {
+        String(str) -> {
             return Type.Primitive("string");
         }
         Member(member) -> {

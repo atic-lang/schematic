@@ -7,23 +7,24 @@ struct Position {
 }
 
 
-exception struct NotFoundError {
-
-}
-
-
 exception struct NotFoundMsgError {
     msg: string;
 }
 
 
-exception struct AticError {
+exception struct AticTokenError {
     position: Position;
     msg: string;
 }
 
-exception struct NotImplError {
+exception struct AticGrammarError {
+    position: Position;
+    msg: string;
+}
 
+exception struct AticParseError {
+    position: Position;
+    msg: string;
 }
 
 exception struct AssertError {

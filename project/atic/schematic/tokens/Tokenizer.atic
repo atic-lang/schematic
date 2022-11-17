@@ -24,7 +24,7 @@ fn generateTokens(tokens: List<Token>, text: string, line: number) -> List<Token
         let tokenC: Optional<Token> = findToken(subString,tokens);
         if tokenC matches None() {
             let pos: Position = Position(charCount, charCount+1, line);
-            throw AticError(pos, "invalid token " + subString);
+            throw AticTokenError(pos, "invalid token " + subString);
         } else matches Some(token_) {
             let token: Token = token_;
             capturedChars = capturedChars + charAt(text, charCount);

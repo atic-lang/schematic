@@ -291,7 +291,9 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
             let a: Type = getAt(functionType.inputs,i);
             let b: Type = getExprType(getAt(exprList,i));
             if !testTypes(a, b, query) {
-                throw AssertError("incompatible arguments on function call");
+                print("expected " + typeToSting(a));
+                print("but got " + typeToSting(b));
+                throw AssertError("incompatible arguments on function call for argument " + toString(i));
             }
             i = i + 1;
         }

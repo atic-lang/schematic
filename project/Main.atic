@@ -15,23 +15,24 @@ use atic.schematic.Expression;
 
 
 fn main() {
+    print("new syntax test");
     let defaultImports = newList<Path>();
     insert(defaultImports, Path("Core"));
     let fileFormats = newList<string>();
     insert(fileFormats, "atic");
     let project: Project = Project(
         newMap<string, PathEntry>(),
-        "C:/Users/Moritz/Documents/Projects/atic/schematic/project",
+        "C:/Users/Moritz/Documents/Projects/atic/schematic_tests/project",
         newList<Unit>(),
         fileFormats,
         defaultImports,
         newList<RichFunction>()
     );
-    let src: string = loadFile("C:/Users/Moritz/Documents/Projects/java/atic/res/res2/testGrammar.txt");
+    let src: string = loadFile("C:/Users/Moritz/Documents/Projects/atic/schematic/project/CFG.txt");
     let ruleSet = generateRuleSet(split(src, "\n"));
     src = "";
     lexAndCheckProject(project, ruleSet);
-    compileProject(project, "C:/Users/Moritz/Documents/Projects/java/atic/res/res2/out");
+    compileProject(project, "C:/Users/Moritz/Documents/Projects/atic/schematic_tests/project/out");
 }
 
 fn lexAndCheckProject(project: Project, rules: RuleSet) {
@@ -61,8 +62,14 @@ fn lexAndCheckProject(project: Project, rules: RuleSet) {
 
     let tokenList: List<Token> = genTokenList();
 
+    let usageMap = newMap<string, number>();
+
     forEach(units, fn (ref: Unit) -> void {
-        lexUnit(project, ref, tokenList, rules);
+        lexUnit(project, ref, tokenList, rules, usageMap);
+    });
+
+    forEachBI(usageMap, fn(name: string, count: number) -> void {
+        // print(name + " was checked " + toString(count));
     });
 
     forEach(units, fn (ref: Unit) -> void {
@@ -87,9 +94,9 @@ fn lexAndCheckProject(project: Project, rules: RuleSet) {
     });
 }
 
-fn lexUnit(project: Project, unit: Unit, tokenList: List<Token>, rules: RuleSet) {
-    print("lexing " + unit.path.path);
-    let node: Node = generateNode(unit.src, tokenList, rules);
+fn lexUnit(project: Project, unit: Unit, tokenList: List<Token>, rules: RuleSet, usageMap: Map<string, number>) {
+    //print("lexing " + unit.path.path);
+    let node: Node = generateNode(unit.src, tokenList, rules, usageMap);
     unit.node = Optional.Some(node);
     let environment = Environment(unit.path, project, newList<Path>());
     unit.environment = Optional.Some(environment);
@@ -295,7 +302,7 @@ fn testForReturns(statement: Statement, allowEarlyReturns: bool) -> bool {
     }
 }
 
-fn generateNode(src: string, tokens: List<Token>, rules: RuleSet) -> Node {
+fn generateNode(src: string, tokens: List<Token>, rules: RuleSet, usageMap: Map<string, number>) -> Node {
     let list: List<TokenRecord> = newList<TokenRecord>();
 
     let lineCount: Ref<number> = Ref(0);
@@ -311,7 +318,7 @@ fn generateNode(src: string, tokens: List<Token>, rules: RuleSet) -> Node {
          else return true;
     });
 
-    let node: Node = reverseRule(rules,"entry",filtered);
+    let node: Node = reverseRule(rules,"entry",filtered, usageMap);
     return node;
 }
 

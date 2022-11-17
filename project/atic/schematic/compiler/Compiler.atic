@@ -36,6 +36,7 @@ fn compileProject(project: Project, outFile: string) -> CompiledProject {
 }
 
 fn compileClosures(project: Project) -> string {
+    print("compiling closures");
     let codes = newList<string>();
     forEach(project.closures, fn (func: RichFunction) -> void {
         let response = compileClosure(func);
@@ -71,6 +72,7 @@ fn compileUnit(unit: Unit) -> string {
         if function.properties.isNative {
             return;
         }
+        print("Compiling " + function.path.path)
         let response = compileFunction(function);
         insert(codes, "fn " + function.path.path);
 
@@ -184,63 +186,59 @@ fn compileStatement(statement: Statement, info: AsmObj) {
             });
         }
         Assign(assignStatement) -> {
-
             if assignStatement.member.type matches Local(variable, accessList) {
                 let expressionTarget = compileExpression(assignStatement.expression, info);
-                let option = get(info.registers, variable);
-                if option matches Some(target) {
-                    if accessList.size == 0 {
-                        addInstruction(Instruction.Copy(target, expressionTarget), info);
-                    } else {
-                        let target_ = useRegister(info);
-                        let src = target;
+                let target = getVariableRegister(info, variable);
 
-                        let i: number = 0;
-                        let s: number = accessList.size - 1;
+                if accessList.size == 0 {
+                    addInstruction(Instruction.Copy(target, expressionTarget), info);
+                } else {
+                    let target_ = useRegister(info);
+                    let src = target;
 
-                        while i < s {
-                            let access: Access = getAt(accessList,i);
-                            match access {
-                                Array(type, expression) -> {
-                                    let exprTarget = compileExpression(expression, info);
-                                    addInstruction(Instruction.LoadArray(target_, src, exprTarget), info);
-                                }
-                                Call(type, expressions) -> {
-                                    let argList = newList<number>();
-                                    forEachI(expressions, fn (expr: Expression, index: number) -> void {
-                                        let exprTarget = compileExpression(expr, info);
-                                        insert(argList, exprTarget);
-                                    });
-                                    forEachI(argList, fn (exprTarget: number, index: number) -> void {
-                                        addInstruction(Instruction.Argument(index, exprTarget), info);
-                                    });
+                    let i: number = 0;
+                    let s: number = accessList.size - 1;
 
-                                    addInstruction(Instruction.InvokeFunction(target_, src), info);
-                                }
-                                Member(type, offset) -> {
-                                    addInstruction(Instruction.LoadMember(target_, src, offset), info);
-                                }
-                            }
-                            src = target_;
-                            i = i + 1;
-                        }
+                    while i < s {
                         let access: Access = getAt(accessList,i);
                         match access {
                             Array(type, expression) -> {
                                 let exprTarget = compileExpression(expression, info);
-                                addInstruction(Instruction.StoreArray(expressionTarget, src, exprTarget), info);
+                                addInstruction(Instruction.LoadArray(target_, src, exprTarget), info);
                             }
                             Call(type, expressions) -> {
-                               throw AssertError("cant reassign a function call");
+                                let argList = newList<number>();
+                                forEachI(expressions, fn (expr: Expression, index: number) -> void {
+                                    let exprTarget = compileExpression(expr, info);
+                                    insert(argList, exprTarget);
+                                });
+                                forEachI(argList, fn (exprTarget: number, index: number) -> void {
+                                    addInstruction(Instruction.Argument(index, exprTarget), info);
+                                });
+
+                                addInstruction(Instruction.InvokeFunction(target_, src), info);
                             }
                             Member(type, offset) -> {
-                                addInstruction(Instruction.StoreMember(expressionTarget, src, offset), info);
+                                addInstruction(Instruction.LoadMember(target_, src, offset), info);
                             }
-                        } 
-                    }       
-                } else matches None() {
-                    throw AssertError("cant find variable for assign");
-                }                          
+                        }
+                        src = target_;
+                        i = i + 1;
+                    }
+                    let access: Access = getAt(accessList,i);
+                    match access {
+                        Array(type, expression) -> {
+                            let exprTarget = compileExpression(expression, info);
+                            addInstruction(Instruction.StoreArray(expressionTarget, src, exprTarget), info);
+                        }
+                        Call(type, expressions) -> {
+                           throw AssertError("cant reassign a function call");
+                        }
+                        Member(type, offset) -> {
+                            addInstruction(Instruction.StoreMember(expressionTarget, src, offset), info);
+                        }
+                    } 
+                }                            
             }
         }
         Branch(branchStatement) -> {
@@ -406,22 +404,14 @@ fn compileExpression(expression: Expression, info: AsmObj) -> number {
     } else matches Function(richFunction) {
         let target = useRegister(info);
         forEachI(richFunction.captures, fn(variable: Variable, index: number) -> void {
-            if variable.parent matches Some(container) {
-                let option = get(info.registers, container);
-                if option matches Some(target_) {
-                    addInstruction(Instruction.Argument(index, target_), info);
-                } else {
-                    throw AssertError("cant find variable for capture " + variable.name);
-                }
-            } else {
-                throw AssertError("cant unwrap parent of variable " + variable.name);
-            }
+            let target_ = getVariableRegister(info, variable);
+            addInstruction(Instruction.Argument(index, target_), info);
         });
         addInstruction(Instruction.CreateClosure(target, richFunction.captures.size, "#closure" + toString(richFunction.count)), info);
         return target;
     }
-    
 }
+
 
 fn compileBoolExpression(boolExpr: BoolExpression, info: AsmObj) -> number {
     if boolExpr matches Implemented(nextExpr, operator, selfExpr) {
@@ -514,44 +504,40 @@ fn compileFactor(factor: Factor, info: AsmObj) -> number {
 }
 fn compileMember(member: Member, info: AsmObj) -> number {
     if member.type matches Local(var, accessList) {
-        let option = get(info.registers, var);
-        if option matches Some(target) {
-            //TODO accessList
-            if accessList.size == 0 {
-                return target;
-            } else {
-                let target_ = Ref(useRegister(info));
-                let src = Ref(target);
-                forEach(accessList, fn (access: Access) -> void {
-                    match access {
-                        Array(type, expression) -> {
-                            let exprTarget = compileExpression(expression, info);
-                            addInstruction(Instruction.LoadArray(target_.value, src.value, exprTarget), info);
-                        }
-                        Call(type, expressions) -> {
-
-                            let argList = newList<number>();
-                            forEachI(expressions, fn (expr: Expression, index: number) -> void {
-                                let exprTarget = compileExpression(expr, info);
-                                insert(argList, exprTarget);
-                            });
-                            
-                            forEachI(argList, fn (exprTarget: number, index: number) -> void {
-                                addInstruction(Instruction.Argument(index, exprTarget), info);
-                            });    
-
-                            addInstruction(Instruction.InvokeFunction(target_.value, src.value), info);
-                        }
-                        Member(type, offset) -> {
-                            addInstruction(Instruction.LoadMember(target_.value, src.value, offset), info);
-                        }
+        let target = getVariableRegister(info, var);
+        //TODO accessList
+        if accessList.size == 0 {
+            return target;
+        } else {
+            let target_ = Ref(useRegister(info));
+            let src = Ref(target);
+            forEach(accessList, fn (access: Access) -> void {
+                match access {
+                    Array(type, expression) -> {
+                        let exprTarget = compileExpression(expression, info);
+                        addInstruction(Instruction.LoadArray(target_.value, src.value, exprTarget), info);
                     }
-                    src.value = target_.value;
-                });
-                return target_.value;
-            }
-        } else matches None() {
-            throw AssertError("cant find variable for member " + var.name);
+                    Call(type, expressions) -> {
+
+                        let argList = newList<number>();
+                        forEachI(expressions, fn (expr: Expression, index: number) -> void {
+                            let exprTarget = compileExpression(expr, info);
+                            insert(argList, exprTarget);
+                        });
+                        
+                        forEachI(argList, fn (exprTarget: number, index: number) -> void {
+                            addInstruction(Instruction.Argument(index, exprTarget), info);
+                        });    
+
+                        addInstruction(Instruction.InvokeFunction(target_.value, src.value), info);
+                    }
+                    Member(type, offset) -> {
+                        addInstruction(Instruction.LoadMember(target_.value, src.value, offset), info);
+                    }
+                }
+                src.value = target_.value;
+            });
+            return target_.value;
         }
     } else if member.type matches Function(staticFunction, expressions, accessList) {
         let functionRegister = useRegister(info);
@@ -656,6 +642,26 @@ fn maxU(a: number, b: number) -> number {
         return a;
     }
     return b;
+}
+
+fn getVariableRegister(info: AsmObj, var: Variable) -> number {
+    let result = get(info.registers, var);
+    //find good grammar for this
+    if result matches Some(register) { 
+        return register;
+    }
+    let currentVariable = var;
+    while true {
+        if currentVariable.parent matches Some(currentParent) {
+            if get(info.registers, currentParent) matches Some(register) {
+                return register;
+            } 
+            currentVariable = currentParent;
+        } else { 
+            throw AssertError("cant find register for variable \"" + var.name + "\"");
+        }
+    }
+    throw AssertError("cant find register for variable");
 }
 
 fn useRegister(info: AsmObj) -> number {

@@ -51,14 +51,12 @@ fn contextCopy(context: Context) -> Context {
 }
 
 fn addVariable(context: Context, variable: Variable) {
-
     let name = variable.name;
     forEach(context.variables, fn (ref: Variable) -> void {
         if ref.name == name {
             throw AssertError("duplicate name " + name);
         }
     });
-
     insert(context.variables,variable);
 }
 
