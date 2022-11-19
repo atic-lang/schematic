@@ -1,4 +1,4 @@
-fix all name collisions ?
+fix all name collisions ?!!!
 fix richFunctions
 fix incomplete matches
 fix order of operations
@@ -16,5 +16,22 @@ add "peek" tokens for grammar speed up\
 
 order of operations
 makros
+statements as expressions
+yield
+
 namespaces with parameters
 '' = ""
+
+synatx
+empty parameters
+returns 
+if else
+generics
+throw
+fn\b
+while
+matches
+
+
+functions in structs
+

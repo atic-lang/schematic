@@ -14,7 +14,7 @@ namespace := id "{"? topList! "}"?!
 //top struct
 struct := properties "struct"? id! genericsOptional! "{"? structDefinitionList! "}"?!
 structDefinitionList := structDefinition structDefinitionList ||
-structDefinition := id ":"?! type! endOfStatement!
+structDefinition := topFunction | id ":"?! type! endOfStatement!
 
 
 returnType := "->"? type! ||
@@ -29,12 +29,11 @@ declarationList := declaration ","? declarationList! | declaration ||
 declaration := id ":"? type!
 
 //type system
-type := classType | arrayType | functionType | inlineType
+type := classType | arrayType | functionType
 typeList := type ","? typeList | type ||
 classType := nChain genericsOptionalType!
 arrayType := "lst"? type!
 functionType := "fn"? "("?! typeList! ")"?! "->"?! type!
-inlineType := "{"? structDefinitionList! "}"?!
 
 typeChain := "." id typeChain |  "." id ||
 nChain := id typeChain
@@ -125,6 +124,8 @@ boolArithmeticFunc := "&&" | "||"
 
 //functions
 function := richFunction
-//anonymousFunction := "fn"? "("? idList ")"?! "->"?! statement!
-richFunction := "fn"? "("?! declarationList ")"?! "->"?! Type! statement!
+richFunction := "fn"? "("?! optionalDeclarationList! ")"?! returnType! statement!
 idList := id ","? idList | id ||
+
+optionalDeclarationList := optionalDeclaration ","? optionalDeclarationList | optionalDeclaration ||
+optionalDeclaration := id ":"? type! | id 

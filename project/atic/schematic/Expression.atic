@@ -42,100 +42,34 @@ enum Factor {
     Member(Member);
 }
 
-fn expressionUsages(expression: Expression) -> List<Variable> {
-    if expression matches Bool(boolExpr) {
-        return boolUsages(boolExpr);
-    } else matches Function(func) {
-        return func.captures;
-    }
-}
 
-fn boolUsages(expr: BoolExpression)  -> List<Variable> {
-    let variables = newList<Variable>();
-    if expr matches Implemented(next, op, same) {
-        addAll(variables, comparisonExpressionUsage(next));
-        addAll(variables, boolUsages(same));
-    } else matches Normal(next) {
-        addAll(variables, comparisonExpressionUsage(next));
-    }
-    return variables;
-}
-
-fn comparisonExpressionUsage(expr: ComparisonExpression) -> List<Variable> {
-    let variables = newList<Variable>();
-    if expr matches Implemented(next, op, same) {
-        addAll(variables, arithmeticExpressionUsage(next));
-        addAll(variables, comparisonExpressionUsage(same));
-    } else matches Normal(next) {
-        addAll(variables, arithmeticExpressionUsage(next));
-    }
-    return variables;
-}
- 
-fn arithmeticExpressionUsage(expr: ArithmeticExpression) -> List<Variable> {
-    let variables = newList<Variable>();
-    if expr matches Implemented(next, op, same) {
-        addAll(variables, termUsage(next));
-        addAll(variables, arithmeticExpressionUsage(same));
-    } else matches Normal(next) {
-        addAll(variables, termUsage(next));
-    }
-    return variables;
-}
-
-fn termUsage(expr: Term) -> List<Variable> {
-    let variables = newList<Variable>();
-    if expr matches Implemented(next, op, same) {
-        addAll(variables, factorUsage(next));
-        addAll(variables, termUsage(same));
-    } else matches Normal(next) {
-        addAll(variables, factorUsage(next));
-    }
-    return variables;
-}
-
-fn factorUsage(expr: Factor) -> List<Variable> {
-    let variables = newList<Variable>();
-    match expr {
-        Expression(expression) -> {
-            addAll(variables, expressionUsages(expression));
-        }
-        Number(number) -> {
-            
-        }
-        BoolLiteral(bool) -> {
-
-        }
-        Not(factor) -> {
-            addAll(variables, factorUsage(factor));
-        }
-        NegUnary(factor) -> {
-            addAll(variables, factorUsage(factor));
-        }
-        String(string) -> {
-
-        }
-        Member(member) -> {
-            addAll(variables, memberUsages(member));
-        }
-    }
-    return variables;
-}
-
-
-fn exprFromNode(node: Node, context: Context) -> Expression {
+fn exprFromNode(node: Node, context: Context , hint: Optional<Type>, openQuery: MatchQuery) -> Expression {
     assertType(node,"expression");
+
     if isPresent(node, "boolArithmetic") {
         let boolExpr = boolFromNode(getNode(node,"boolArithmetic"),context);
-        return Expression.Bool(boolExpr);
+        let exprB = Expression.Bool(boolExpr);
+        if hint matches Some(hintType) {
+            if !testTypes(hintType, getExprType(exprB), openQuery) {
+                throw AssertError("type hint for expression not compatible");
+            }
+        }
+        return exprB;
     } else if isPresent(node, "function") {
         let functionNode = getNode(node, "function");
         if isPresent(functionNode, "richFunction") {
             let func = getNode(functionNode, "richFunction");
-            let richFunctionObj = richFunctionFromNode(func, context);
-            return Expression.Function(richFunctionObj);
+            let richFunctionObj = richFunctionFromNode(func, context, hint, openQuery);
+            let exprFnc = Expression.Function(richFunctionObj);
+            if hint matches Some(hintType) {
+                if !testTypes(hintType, getExprType(exprFnc),openQuery) {
+                    throw AssertError("type hint for function not compatible");
+                }
+            }
+            return exprFnc;
         } else throw AssertError("anon function not supported");
     } 
+    
     throw AssertError("not impl for complex");
 }
 
@@ -194,7 +128,6 @@ fn compFromTree(node: Node, context: Context) -> ComparisonExpression {
             assertExprType(Type.Primitive("number"), rightType, "right side is not a number" + toString(operator));
         }
 
-        //TODO
 
         return ComparisonExpression.Implemented(expression, operator, rightElement);
     } else {
@@ -372,6 +305,88 @@ fn assertExprType(expected: Type, found: Type, msg: string) {
         throw AssertError(msg);
     }
 }
+
+
+fn expressionUsages(expression: Expression) -> List<Variable> {
+    if expression matches Bool(boolExpr) {
+        return boolUsages(boolExpr);
+    } else matches Function(func) {
+        return func.captures;
+    }
+}
+
+fn boolUsages(expr: BoolExpression)  -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, comparisonExpressionUsage(next));
+        addAll(variables, boolUsages(same));
+    } else matches Normal(next) {
+        addAll(variables, comparisonExpressionUsage(next));
+    }
+    return variables;
+}
+
+fn comparisonExpressionUsage(expr: ComparisonExpression) -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, arithmeticExpressionUsage(next));
+        addAll(variables, comparisonExpressionUsage(same));
+    } else matches Normal(next) {
+        addAll(variables, arithmeticExpressionUsage(next));
+    }
+    return variables;
+}
+ 
+fn arithmeticExpressionUsage(expr: ArithmeticExpression) -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, termUsage(next));
+        addAll(variables, arithmeticExpressionUsage(same));
+    } else matches Normal(next) {
+        addAll(variables, termUsage(next));
+    }
+    return variables;
+}
+
+fn termUsage(expr: Term) -> List<Variable> {
+    let variables = newList<Variable>();
+    if expr matches Implemented(next, op, same) {
+        addAll(variables, factorUsage(next));
+        addAll(variables, termUsage(same));
+    } else matches Normal(next) {
+        addAll(variables, factorUsage(next));
+    }
+    return variables;
+}
+
+fn factorUsage(expr: Factor) -> List<Variable> {
+    let variables = newList<Variable>();
+    match expr {
+        Expression(expression) -> {
+            addAll(variables, expressionUsages(expression));
+        }
+        Number(number) -> {
+            
+        }
+        BoolLiteral(bool) -> {
+
+        }
+        Not(factor) -> {
+            addAll(variables, factorUsage(factor));
+        }
+        NegUnary(factor) -> {
+            addAll(variables, factorUsage(factor));
+        }
+        String(string) -> {
+
+        }
+        Member(member) -> {
+            addAll(variables, memberUsages(member));
+        }
+    }
+    return variables;
+}
+
 
 
 enum Operator {

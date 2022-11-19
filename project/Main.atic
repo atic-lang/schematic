@@ -149,10 +149,12 @@ fn resolveMembers(project: Project, unit: Unit) {
             let definitions = getNode(node, "structDefinitionList")
             let context = Context(environment, newList<Variable>(), struct_.generics,  Type.Primitive("void"));
             forEach(walk("structDefinition", "structDefinitionList", definitions), fn (sNode: Node) -> void {
-                let name: string = id(sNode);
-                let typeNode: Node = getNode(sNode,"type");
-                let biEntry = BIEntry(name, typeFromTree(typeNode, context));
-                insert(list, biEntry);
+                if isPresent(sNode, "id") {
+                    let name: string = id(sNode);
+                    let typeNode: Node = getNode(sNode,"type");
+                    let biEntry = BIEntry(name, typeFromTree(typeNode, context));
+                    insert(list, biEntry);
+                }
             });
         });
         forEachBI(unit.enums, fn (enum_: Enum, node: Node) -> void {
@@ -176,43 +178,95 @@ fn resolveMembers(project: Project, unit: Unit) {
 fn resolveFunctionHead(project: Project, unit: Unit) {
     if unit.environment matches Some(environment) {
         if unit.node matches Some(node) {
-         let list: List<Node> = walk("top", "topList", node);
-         forEach(list, fn (n: Node) -> void {
-             if isPresent(n, "topFunction") {
-                let functionNode = getNode(n,"topFunction");
+            project;
+            let list: List<Node> = walk("top", "topList", node);
+            forEach(list, fn (n: Node) -> void {
+                project;
+                unit;
+                 if isPresent(n, "topFunction") {
+                    let result = getTopLevelFunction(unit.path, n, environment, Optional.None<Generics>());
+                    put(project.entries, result.staticFunction.path.path, PathEntry.Function(result.staticFunction));
+                    put(unit.functions, result.staticFunction, getNode(result.node,"blockStatement"));
+                 }
+            });
 
-                let name = id(functionNode);
-                let generics = genericsFromNode(getNode(functionNode, "genericsOptional"));
-                let properties = propertiesFromNode(getNode(functionNode, "properties"));
-                let path = pathAddStr(unit.path, name);
-                let fContext: Context = Context(
-                    environment,
-                    newList<Variable>(),
-                    generics,
-                    Type.Primitive("void")
-                );
+            forEachBI(unit.interfaces, fn (struct_: Struct, node: Node) -> void {
+                project;
+                unit;
+                let definitions = getNode(node, "structDefinitionList");
+                let context = Context(environment, newList<Variable>(), struct_.generics,  Type.Primitive("void"));
+                forEach(walk("structDefinition", "structDefinitionList", definitions), fn (sNode: Node) -> void {
+                    if isPresent(sNode, "topFunction") {
+                        let result = getTopLevelFunction(struct_.path, sNode, environment, Optional.Some(struct_.generics));
+                        let staticFunction = result.staticFunction;
+                        let inputs = newList<Variable>();
 
-                let returnNode: Node = getNode(functionNode,"returnType");
-                let returnType: Type = Type.Primitive("void");
-                if isPresent(returnNode, "type") {
-                    returnType = typeFromTree(getNode(returnNode, "type"), fContext);
-                }
+                        let typeImplTypes = newList<Type>();
+                        forEach(struct_.generics.types, fn(gen: GenericType) -> void {
+                            insert(typeImplTypes, Type.Generic(gen));
+                        });
 
-                let inputs = newList<Variable>();
-                forEach(walk("declaration", "declarationList", functionNode), fn (inNode: Node) -> void {
-                    let inputName = id(inNode);
-                    let type = getNode(inNode, "type");
-                    let returnType_ = typeFromTree(type, fContext);
-                    let variable: Variable = Variable(inputName, returnType_, Location.Input(), Modifier.Final(), Optional.None<Variable>());
-                    insert(inputs, variable);
+                        let variable: Variable = Variable("this", Type.Struct(StructImpl(struct_, typeImplTypes)), Location.Input(), Modifier.Final(), Optional.None<Variable>());
+                        insert(inputs, variable);
+
+                        forEach(staticFunction.inputs, fn(var: Variable) -> void {
+                            insert(inputs, var);
+                        });
+                        staticFunction.inputs = inputs;
+
+                        put(project.entries, result.staticFunction.path.path, PathEntry.Function(result.staticFunction));
+                        put(unit.functions, result.staticFunction, getNode(result.node,"blockStatement"));
+                    }
                 });
-                let staticFunction: StaticFunction = StaticFunction(path, generics, properties, Optional.None<Statement>(), inputs, returnType);
-                put(project.entries, path.path, PathEntry.Function(staticFunction));
-                put(unit.functions, staticFunction, getNode(functionNode,"blockStatement"));
-             }
-         });
+            });
+
+
+            
         }
     }
+}
+
+fn getTopLevelFunction(path_: Path, node: Node, environment: Environment, genericsAdd: Optional<Generics>) -> StaticFunctionBody {
+    let functionNode = getNode(node,"topFunction");
+
+    let name = id(functionNode);
+    let generics = genericsFromNode(getNode(functionNode, "genericsOptional"));
+    let properties = propertiesFromNode(getNode(functionNode, "properties"));
+    let path = pathAddStr(path_, name);
+
+    if genericsAdd matches Some(additionalGenerics) {
+        generics = joinGenerics(generics, additionalGenerics);
+    }
+
+    let fContext: Context = Context(
+        environment,
+        newList<Variable>(),
+        generics,
+        Type.Primitive("void")
+    );
+
+
+    let returnNode: Node = getNode(functionNode,"returnType");
+    let returnType: Type = Type.Primitive("void");
+    if isPresent(returnNode, "type") {
+        returnType = typeFromTree(getNode(returnNode, "type"), fContext);
+    }
+
+    let inputs = newList<Variable>();
+    forEach(walk("declaration", "declarationList", functionNode), fn (inNode: Node) -> void {
+        let inputName = id(inNode);
+        let type = getNode(inNode, "type");
+        let returnType_ = typeFromTree(type, fContext);
+        let variable: Variable = Variable(inputName, returnType_, Location.Input(), Modifier.Final(), Optional.None<Variable>());
+        insert(inputs, variable);
+    });
+    let staticFunction: StaticFunction = StaticFunction(path, generics, properties, Optional.None<Statement>(), inputs, returnType);
+    return StaticFunctionBody(staticFunction, functionNode);
+}
+
+struct StaticFunctionBody {
+    staticFunction: StaticFunction;
+    node: Node;
 }
 
 

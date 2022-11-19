@@ -19,7 +19,7 @@ fn getNode(this: Node, name: string) -> Node {
         i = i + 1;
     }
 
-    throw NotFoundMsgError(name);
+    throw NotFoundMsgError(name + " was not found");
 }
 
 fn isPresent(this: Node, name: string) -> bool {

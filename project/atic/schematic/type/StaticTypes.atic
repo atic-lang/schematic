@@ -61,12 +61,24 @@ struct Properties {
     isException: bool;
 }
 
-fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
+fn richFunctionFromNode(node: Node, context: Context , hint: Optional<Type>, openQuery: MatchQuery) -> RichFunction {
+    
     assertType(node, "richFunction");
     //TODO test collisions
     let inputs = newList<Variable>();
     let copyContext = contextCopy(context);
     copyContext.variables = newList<Variable>();
+    let typeHintMap = newMap<number, Type>();
+    let returnHint = Optional.None<Type>();
+
+    if hint matches Some(typeHint) {
+        if typeHint matches Function(fcn) {
+            forEachI(fcn.inputs, fn(type: Type, index: number) -> void {
+                put(typeHintMap, index, type);
+            });
+            returnHint = Optional.Some(fcn.output);
+        }
+    }
 
     forEach(context.variables, fn (var: Variable) -> void {
         let variableDef =  Variable(var.name, var.type, 
@@ -76,17 +88,53 @@ fn richFunctionFromNode(node: Node, context: Context) -> RichFunction {
         addVariable(copyContext, variableDef);
     });
 
-    forEach(walk("declaration", "declarationList", node), fn (input: Node) -> void {
+
+    forEachI(walk("optionalDeclaration", "optionalDeclarationList", node), fn (input: Node, index: number) -> void {
         let name = id(input);
-        let typeNode = getNode(input, "type");
-        let variable = Variable(name, typeFromTree(typeNode, context), 
+        let typeOfDecl = Type.Primitive("");
+        if isPresent(input, "type") {
+            typeOfDecl = typeFromTree(getNode(input, "type"), context);
+            if get(typeHintMap, index) matches Some(typeHint) {
+                if !testTypes(typeHint, typeOfDecl, openQuery) {
+                    throw AssertError("type hint for function arguments not compatible");
+                }
+                typeOfDecl = substitute(typeOfDecl, openQuery.resolved)
+            }
+        } else {
+            if get(typeHintMap, index) matches Some(typeHint) {
+                typeOfDecl = typeHint;
+                typeOfDecl = substitute(typeOfDecl, openQuery.resolved)
+            } else {
+                throw AssertError("Missing a type hint at at position " + toString(index));
+            }
+        }
+        let variable = Variable(name, typeOfDecl, 
             Location.Input(), 
             Modifier.Final(), 
             Optional.None<Variable>());
         insert(inputs, variable);
         addVariable(copyContext, variable);
     });
-    let returnType = typeFromTree(getNode(node, "type"), context);
+    let returnNode = getNode(node, "returnType");
+    let returnType = Type.Primitive("");
+    if isPresent(returnNode, "type") {
+        let trueReturnType = typeFromTree(getNode(returnNode, "type"), context);
+        if returnHint matches Some(expectedType) {
+            if !testTypes(expectedType, trueReturnType, openQuery) {
+                throw AssertError("type hint for function return not compatible");
+            }
+            // trueReturnType = substitute(trueReturnType, openQuery.resolved)
+        } 
+        returnType = trueReturnType;
+    } else {
+        if returnHint matches Some(expectedType) {
+            returnType = expectedType;
+            // returnType = substitute(returnType, openQuery.resolved)
+        } else {
+            throw AssertError("return type missing");
+            // returnType = Type.Primitive("void");
+        }
+    }
 
     copyContext.returnType = returnType;
 
@@ -199,6 +247,21 @@ fn genericsTypeFromNode(node: Node, context: Context) -> GenericsType {
         });
     }
     return GenericsType(list);
+}
+
+fn joinGenerics(a: Generics, b: Generics) -> Generics {
+    let list = newList<GenericType>();
+    forEach(b.types, fn(gen: GenericType) -> void {
+        insert(list, gen);
+    });
+    forEachI(a.types, fn(gen: GenericType, index: number) -> void {
+        if doesContainName__(b.types, gen.name) {
+            throw AssertError("Cant have multiple matching generic names");
+        } else {
+            insert(list, GenericType(list.size + index,gen.name));
+        }
+    });
+    return Generics(list);
 }
 
 fn doesContainName__(list: List<GenericType>, name: string) -> bool {

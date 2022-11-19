@@ -200,14 +200,14 @@ fn instructionCode(instruction: Instruction) -> string {
 fn commandFromOperatorByType(target: number, left: number, right: number, operator: Operator, type: Type) -> Instruction {
 
     if testTypes(Type.Primitive("string"), type, emptyQuery()) {
-            if operator matches Equals() {
-                return Instruction.StringEquals(target, left, right);
-            } else if operator matches NonEquals() {
-                return Instruction.StringNonEquals(target, left, right);
-            } else if operator matches Add() {
-                return Instruction.Concat(target, left, right);
-            } 
-            throw AssertError("only +, != or == allowed on strings");
+        if operator matches Equals() {
+            return Instruction.StringEquals(target, left, right);
+        } else if operator matches NonEquals() {
+            return Instruction.StringNonEquals(target, left, right);
+        } else if operator matches Add() {
+            return Instruction.Concat(target, left, right);
+        } 
+        throw AssertError("only +, != or == allowed on strings");
     }
     
 

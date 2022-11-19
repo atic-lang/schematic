@@ -207,7 +207,7 @@ fn getAccessInfos(node: Node, startType: Type, nodeComponents: List<Node>, conte
             } else if subName == "arrayAccess" {
                 let inType: Type = typeRef.value;
                 if inType matches Array(subType) {
-                    let expr = exprFromNode(getNode(subTerm, "expression"), context);
+                    let expr = exprFromNode(getNode(subTerm, "expression"), context, Optional.None<Type>(), emptyQuery());
                     let access = Access.Array(subType, expr);
                     insert(compounds, access);
                     typeRef.value = subType;
@@ -254,17 +254,41 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
     assertType(node, "callAccess");
 
     let genericsType: GenericsType = genericsTypeFromNode(getNode(node, "genericsOptionalType"), context);
-    let exprList = newList<Expression>();
+    
     let walkList = newList<Node>();
     collectArgList(getNode(node, "argList"), walkList);
     // print(toString(walkList.size) + " arg size for " + toString(node.record.position.line));
-    forEach(walkList, fn (subNode_: Node) -> void {
-        let expr = exprFromNode(subNode_, context);
-        insert(exprList, expr);
-    });
+
+    let hints = newMap<number, Type>();
+
+   //if callable matches Function(functionType) {
+   //    forEachI(functionType.inputs, fn(input: Type, index: number) -> void {
+   //        put(hints, index, input);
+   //    });
+   //} else if callable matches Struct(struct_) {
+   //    forEachI(struct_.members, fn(entry: BIEntry<string, Type>, index: number) -> void {
+   //        put(hints, index, entry.value);
+   //    });
+   //}  else if callable matches Enum(enum_, enumEntry) {
+   //    forEachI(enumEntry.components, fn(input: Type, index: number) -> void {
+   //        put(hints, index, input);
+   //    });
+   //}
+
+
+
+    // forEachI(walkList, fn (subNode_: Node, index: number) -> void {
+        // let hint = Optional.None<Type>();
+        // if get(hints, index) matches Some(expected) {
+            // hint = Optional.Some(expected);
+        // }
+        // let expr = exprFromNode(subNode_, context, hint, emptyQuery());
+        // insert(exprList, expr);
+    // });
 
     if callable matches Function(functionType) {
-        if exprList.size != functionType.inputs.size {
+        
+        if walkList.size != functionType.inputs.size {
             throw AssertError("incompatible arg size");
         }
         let generics = functionType.generics;
@@ -285,16 +309,20 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         }
 
         let i: number = 0;
-        let s: number = exprList.size;
+        let s: number = walkList.size;
 
+        let exprList = newList<Expression>();
+       
         while i < s {
-            let a: Type = getAt(functionType.inputs,i);
-            let b: Type = getExprType(getAt(exprList,i));
-            if !testTypes(a, b, query) {
-                print("expected " + typeToSting(a));
-                print("but got " + typeToSting(b));
+            let expected: Type = getAt(functionType.inputs,i);
+            let expr = exprFromNode(getAt(walkList,i), context, Optional.Some(expected), query);
+            let found: Type = getExprType(expr);
+            if !testTypes(expected, found, query) {
+                print("expected " + typeToSting(expected));
+                print("but got " + typeToSting(found));
                 throw AssertError("incompatible arguments on function call for argument " + toString(i));
             }
+            insert(exprList, expr);
             i = i + 1;
         }
 
@@ -306,7 +334,7 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         let output = substitute(functionType.output, lookup);
         return CallAccess(exprList, output);
     } else if callable matches Struct(struct_) {
-        if exprList.size != struct_.members.size {
+        if walkList.size != struct_.members.size {
             throw AssertError("incompatible arg size");
         }
         let generics = struct_.generics;
@@ -327,14 +355,18 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         }
 
         let i: number = 0;
-        let s: number = exprList.size;
+        let s: number = walkList.size;
+
+        let exprList = newList<Expression>();
 
         while i < s {
-            let a: Type = getExprType(getAt(exprList,i));
-            let b: BIEntry<string, Type> = getAt(struct_.members,i);
-            if !testTypes(b.value, a, query) {
+            let expected: BIEntry<string, Type> = getAt(struct_.members,i);
+            let expr = exprFromNode(getAt(walkList,i), context, Optional.Some(expected.value), query);
+            let a: Type = getExprType(expr);
+            if !testTypes(expected.value, a, query) {
                 throw AssertError("incompatible arguments on initialisation");
             }
+            insert(exprList, expr);
             i = i + 1;
         }
 
@@ -346,7 +378,7 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         let solvedList = solvedList(query);
         return CallAccess(exprList, Type.Struct(StructImpl(struct_, solvedList)));
     } else if callable matches Enum(enum_, enumEntry) {
-        if exprList.size != enumEntry.components.size {
+        if walkList.size != enumEntry.components.size {
             throw AssertError("incompatible arg size for enums");
         }
         let generics = enum_.generics;
@@ -367,21 +399,25 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         }
 
         let i: number = 0;
-        let s: number = exprList.size;
+        let s: number = walkList.size;
+
+        let exprList = newList<Expression>();
 
         while i < s {
-            let a: Type = getExprType(getAt(exprList,i));
-            let b: Type = getAt(enumEntry.components,i);
-            if !testTypes(b, a, query) {
+            let expected: Type = getAt(enumEntry.components,i);
+            let expr = exprFromNode(getAt(walkList,i), context, Optional.Some(expected), query);
+            let a: Type = getExprType(expr);
+            if !testTypes(expected, a, query) {
                 throw AssertError("incompatible arguments on initialisation");
             }
+            insert(exprList, expr);
             i = i + 1;
         }
 
         if !isFullyResolved(query) {
             throw AssertError("Query not fully solved (enum)");
         }
-
+        
         let solvedList = solvedList(query);
         return CallAccess(exprList, Type.Enum(EnumImpl(enum_, solvedList)));
     }
