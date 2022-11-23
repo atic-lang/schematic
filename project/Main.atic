@@ -65,6 +65,7 @@ fn lexAndCheckProject(project: Project, rules: RuleSet) {
     let usageMap = newMap<string, number>();
 
     forEach(units, fn (ref: Unit) -> void {
+        print("Lexing " + ref.path.path);
         lexUnit(project, ref, tokenList, rules, usageMap);
     });
 
@@ -73,24 +74,18 @@ fn lexAndCheckProject(project: Project, rules: RuleSet) {
     });
 
     forEach(units, fn (ref: Unit) -> void {
+        print("Resolving Members in " + ref.path.path);
         resolveMembers(project, ref);
     });
 
     forEach(units, fn (ref: Unit) -> void {
+        print("Resolving Heads in " + ref.path.path);
         resolveFunctionHead(project, ref);
     });
 
     forEach(units, fn (ref: Unit) -> void {
-       resolveFunctionBody(project, ref);
-    });
-
-    forEach(units, fn (ref: Unit) -> void {
-        forEachBI(ref.interfaces, fn (struct_: Struct, node: Node) -> void {
-            //print(struct_.path.path + ":");
-            forEach(struct_.members, fn (entry: BIEntry<string, Type>) -> void {
-                //print(name);
-            });
-        });
+        print("Resolving Bodies in " + ref.path.path);
+        resolveFunctionBody(project, ref);
     });
 }
 
@@ -190,10 +185,10 @@ fn resolveFunctionHead(project: Project, unit: Unit) {
                  }
             });
 
-            forEachBI(unit.interfaces, fn (struct_: Struct, node: Node) -> void {
+            forEachBI(unit.interfaces, fn (struct_: Struct, node_: Node) -> void {
                 project;
                 unit;
-                let definitions = getNode(node, "structDefinitionList");
+                let definitions = getNode(node_, "structDefinitionList");
                 let context = Context(environment, newList<Variable>(), struct_.generics,  Type.Primitive("void"));
                 forEach(walk("structDefinition", "structDefinitionList", definitions), fn (sNode: Node) -> void {
                     if isPresent(sNode, "topFunction") {
@@ -253,7 +248,7 @@ fn getTopLevelFunction(path_: Path, node: Node, environment: Environment, generi
     }
 
     let inputs = newList<Variable>();
-    forEach(walk("declaration", "declarationList", functionNode), fn (inNode: Node) -> void {
+    forEach(pingPong("declaration", "declarationList", "declarationListOpt", functionNode), fn (inNode: Node) -> void {
         let inputName = id(inNode);
         let type = getNode(inNode, "type");
         let returnType_ = typeFromTree(type, fContext);
@@ -273,6 +268,7 @@ struct StaticFunctionBody {
 fn resolveFunctionBody(project: Project, unit: Unit) {
     if unit.environment matches Some(environment) {
         forEachBI(unit.functions, fn (function: StaticFunction, node: Node) -> void {
+            print("Testing " + function.path.path)
             let list: List<Variable> = newList<Variable>();
             addAll(list,function.inputs);
             let context = Context(environment, list, function.generics, function.output);

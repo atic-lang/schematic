@@ -1,7 +1,7 @@
 //"?" will not add the string to the ast
 //"!" will throw an error, if the rule or token could not be captured
 //"#" will not capture the token
-entry := topList
+entry := topList!
 
 topList := top topList | top ||
 top := struct | topFunction | import | enumDef
@@ -14,7 +14,7 @@ namespace := id "{"? topList! "}"?!
 //top struct
 struct := properties "struct"? id! genericsOptional! "{"? structDefinitionList! "}"?!
 structDefinitionList := structDefinition structDefinitionList ||
-structDefinition := topFunction | id ":"?! type! endOfStatement!
+structDefinition := id ":"?! type! endOfStatement!
 
 
 returnType := "->"? type! ||
@@ -25,23 +25,26 @@ enumEntry := id "("?! typeList ")"?! endOfStatement!
 
 id := "keyword"
 
-declarationList := declaration ","? declarationList! | declaration ||
+declarationList := declaration declarationListOpt ||
+declarationListOpt := ","? declarationList! ||
 declaration := id ":"? type!
 
 //type system
 type := classType | arrayType | functionType
-typeList := type ","? typeList | type ||
+typeList := type typeListOpt ||
+typeListOpt := ","? typeList ||
 classType := nChain genericsOptionalType!
 arrayType := "lst"? type!
 functionType := "fn"? "("?! typeList! ")"?! "->"?! type!
 
-typeChain := "." id typeChain |  "." id ||
-nChain := id typeChain
+typeChain := "." id typeChain ||
+typeChainOpt := typeChain ||
+nChain := id typeChainOpt
 
 
 
 //properties
-properties := property properties | property ||
+properties := property properties ||
 property := native | strict | async | exception
 native := "native"
 exception := "exception"
@@ -49,7 +52,7 @@ strict := "strict"
 async :=  "async"
 
 //statement
-statement := blockStatement | definitionStatement | returnStatement |  whileStatement |  matchStatement |  branchStatement | assignStatement | singleExpression |  tryStatement | throwStatement
+statement := blockStatement | definitionStatement | returnStatement | whileStatement |  matchStatement |  branchStatement | assignStatement | singleExpression | throwStatement
 statementList := statement statementList ||
 blockStatement := "{"? statementList! "}"?!
 definitionStatement := typeOfDefinition id! typeOfVar! "="?! expression! endOfStatement!
@@ -63,7 +66,7 @@ singleExpression := member endOfStatement!
 matches := "matches"? nChain! "("?! idList! ")"?! ||
 
 matchStatement := "match"? expression! "{"?! matchEntries! "}"?! endOfBranch!
-matchEntries := matchEntry matchEntries | matchEntry ||
+matchEntries := matchEntry matchEntries ||
 matchEntry := nChain "("?! idList ")"?! "->"?! statement!
 
 genericsOptional := generics ||
@@ -92,10 +95,10 @@ term := factor termRight!
 factor :=  unary |  not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | member
 
 
-boolRight := boolArithmeticFunc boolArithmetic ||
-comparisonRight := comparisonArithmeticFunc comparisonArithmetic ||
-arithmeticRight := arithmeticFunc arithmetic ||
-termRight := termFunc term ||
+boolRight := boolArithmeticFunc boolArithmetic! ||
+comparisonRight := comparisonArithmeticFunc comparisonArithmetic! ||
+arithmeticRight := arithmeticFunc arithmetic! ||
+termRight := termFunc term! ||
 
 string := "string"
 
@@ -107,8 +110,9 @@ number := "number"
 boolLiteral := "false" | "true"
 
 //member
-member := id memberCompound | id
-memberCompound := varTerminal memberCompound | varTerminal
+member := id memberCompoundOpt
+memberCompound := varTerminal memberCompoundOpt
+memberCompoundOpt := memberCompound ||
 varTerminal := memberAccess | callAccess | arrayAccess
 memberAccess := "."? id!
 callAccess := genericsOptionalType "("? argList! ")"?!
@@ -125,7 +129,13 @@ boolArithmeticFunc := "&&" | "||"
 //functions
 function := richFunction
 richFunction := "fn"? "("?! optionalDeclarationList! ")"?! returnType! statement!
-idList := id ","? idList | id ||
 
-optionalDeclarationList := optionalDeclaration ","? optionalDeclarationList | optionalDeclaration ||
-optionalDeclaration := id ":"? type! | id 
+
+idList := id idListOpt ||
+idListOpt := ","? idList ||
+
+
+optionalDeclarationList := optionalDeclaration optionalDeclarationListOpt ||
+optionalDeclarationListOpt := ","? optionalDeclarationList ||
+optionalDeclaration := id optionalDeclType!
+optionalDeclType := ":"? type! ||

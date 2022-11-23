@@ -80,7 +80,7 @@ fn memberFromTree(node: Node, context: Context) -> Member {
     assertType(node, "member");
     let startID: string = id(node);
     let contextVar = askForLocal(context, startID);
-    let nodeComponents = walk("varTerminal", "memberCompound", node);
+    let nodeComponents = pingPong("varTerminal", "memberCompound", "memberCompoundOpt", node);
     if contextVar matches Some(variable) {
         let infos = getAccessInfos(node, variable.type, nodeComponents, context);
         return Member(MemberType.Local(variable, infos.compounds), infos.type);
@@ -161,7 +161,7 @@ fn memberFromTree(node: Node, context: Context) -> Member {
 fn getAccessInfos(node: Node, startType: Type, nodeComponents: List<Node>, context: Context) -> AccessInfo {
     let compounds = newList<Access>();
     let typeRef = Ref(startType);
-    if isPresent(node, "memberCompound") {
+    if isPresent(node, "memberCompoundOpt") {
         forEach(nodeComponents, fn (subNode: Node) -> void {
             let subTerm: Node = child(subNode);
             let subName = subTerm.name;

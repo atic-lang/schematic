@@ -31,7 +31,7 @@ fn newPathNode(node: Node) -> Path {
     let start = id(node);
     let ref = Ref(start);
 
-    let typeList = walk("id", "typeChain", getNode(node,"typeChain"))
+    let typeList = pingPong("id", "typeChain", "typeChainOpt", getNode(node,"typeChainOpt"))
     forEach(typeList, fn (element: Node) -> void {
         ref.value = ref.value + "." + id(element);
     });

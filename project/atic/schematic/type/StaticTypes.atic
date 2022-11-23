@@ -89,11 +89,12 @@ fn richFunctionFromNode(node: Node, context: Context , hint: Optional<Type>, ope
     });
 
 
-    forEachI(walk("optionalDeclaration", "optionalDeclarationList", node), fn (input: Node, index: number) -> void {
+    forEachI(pingPong("optionalDeclaration", "optionalDeclarationList", "optionalDeclarationListOpt", node), fn (input: Node, index: number) -> void {
         let name = id(input);
         let typeOfDecl = Type.Primitive("");
-        if isPresent(input, "type") {
-            typeOfDecl = typeFromTree(getNode(input, "type"), context);
+        let subNode = getNode(input, "optionalDeclType")
+        if isPresent(subNode, "type") {
+            typeOfDecl = typeFromTree(getNode(subNode, "type"), context);
             if get(typeHintMap, index) matches Some(typeHint) {
                 if !testTypes(typeHint, typeOfDecl, openQuery) {
                     throw AssertError("type hint for function arguments not compatible");
@@ -223,7 +224,7 @@ fn genericsFromNode(node: Node) -> Generics {
     if isPresent(node,"generics") {
         let generics = getNode(node,"generics");
         let counter = Ref(0);
-        forEach(walk("id", "idList", generics), fn (generic: Node) -> void  {
+        forEach(pingPong("id", "idList", "idListOpt", generics), fn (generic: Node) -> void  {
             let name = id(generic);
             if doesContainName__(list,name) {
                 throw AssertError("collision with " + name);
@@ -241,7 +242,7 @@ fn genericsTypeFromNode(node: Node, context: Context) -> GenericsType {
     let list = newList<Type>();
     if isPresent(node,"genericsType") {
         let generics = getNode(node,"genericsType");
-        forEach(walk("type", "typeList", generics), fn (generic: Node) -> void  {
+        forEach(pingPong("type", "typeList", "typeListOpt", generics), fn (generic: Node) -> void  {
             let type: Type = typeFromTree(generic,context);
             insert(list,type);
         });

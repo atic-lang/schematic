@@ -125,7 +125,7 @@ fn matchFromTree(node: Node, context: Context) -> MatchStatement {
                 throw AssertError("could not find enum entry for name " + optionName);
             } else matches Some(enumEntry) {
                 let names = newList<string>();
-                forEach(walk("id", "idList", entry), fn (inName: Node) -> void {
+                forEach(pingPong("id", "idList", "idListOpt", entry), fn (inName: Node) -> void {
                     let name = id(inName);
                     insert(names, name);
                 });
@@ -224,7 +224,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                 throw AssertError("could not find enum entry for name " + optionName);
             } else matches Some(enumEntry) {
                 let names = newList<string>();
-                forEach(walk("id", "idList", matchPart), fn (inName: Node) -> void {
+                forEach(pingPong("id", "idList", "idListOpt", matchPart), fn (inName: Node) -> void {
                     let name = id(inName);
                     insert(names, name);
                 });
@@ -270,7 +270,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                                 flag = true;
 
                                 let otherNames = newList<string>();
-                                forEach(walk("id", "idList", elseMatches), fn (inName: Node) -> void {
+                                forEach(pingPong("id", "idList", "idListOpt", elseMatches), fn (inName: Node) -> void {
                                     let name = id(inName);
                                     insert(otherNames, name);
                                 });
@@ -287,7 +287,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
                                 forEachI(otherTypes, fn (type: Type, index: number) -> void {
                                     let name: string = getAt(otherNames, index);
                                     let variable = Variable(name, type, Location.Match(), Modifier.Final(), Optional.None<Variable>());
-                                    addVariable(copyContext, variable); 
+                                    addVariable(copyContext3, variable); 
                                     insert(otherVariables, variable);
                                 });
 

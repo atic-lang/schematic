@@ -52,6 +52,27 @@ fn walkList(leaf: string, list: string,node: Node, collection: List<Node>) {
     }
 }
 
+fn pingPong(leaf: string, list: string, listB: string, node: Node) -> List<Node> {
+    let list_ = newList<Node>();
+    pingPongList(leaf, list, listB, node, list_);
+    return list_;
+}
+
+fn pingPongList(leaf: string, list: string, listB: string,node: Node, collection: List<Node>) {
+    if isPresent(node,leaf) {
+        let leaf_ = getNode(node,leaf);
+        insert(collection,leaf_);
+    }
+    if isPresent(node,list) {
+        let list_ = getNode(node,list);
+        pingPongList(leaf, list, listB, list_, collection);
+    }
+    if isPresent(node,listB) {
+        let list_ = getNode(node,listB);
+        pingPongList(leaf, list, listB, list_, collection);
+    }
+}
+
 fn child(this: Node) -> Node {
     if this.children.size != 1 {
         throw AssertError("Unexpected Size for child ");

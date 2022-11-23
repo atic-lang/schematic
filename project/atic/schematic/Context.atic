@@ -87,6 +87,7 @@ fn askForLocal(context: Context, name: string) -> Optional<Variable> {
      let i: number = 0;
      let s: number = list.size;
 
+    
     while i < s {
         let var: Variable = getAt(list,i);
         if var.name == name {
@@ -94,6 +95,7 @@ fn askForLocal(context: Context, name: string) -> Optional<Variable> {
         }
         i = i + 1;
     }
+
     return Optional.None<Variable>();
 }
 

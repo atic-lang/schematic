@@ -84,7 +84,7 @@ fn typeFromTree(node: Node, context: Context) -> Type {
 fn typeListFromTree(node: Node, context: Context) -> List<Type> {
     assertType(node, "typeList");
     let list = newList<Type>();
-    forEach(walk("type", "typeList", node), fn (subNode: Node) -> void  {
+    forEach(pingPong("type", "typeList", "typeListOpt", node), fn (subNode: Node) -> void  {
         let type: Type = typeFromTree(subNode,context);
         insert(list,type);
     });
