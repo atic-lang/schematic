@@ -6,7 +6,7 @@ struct TokenStream<T> {
 }
 
 fn <T> generateTokenStream(list: List<T>) -> TokenStream<T> {
-    return TokenStream<T>(list.size, list,0);
+    return TokenStream<T>(list.size, list, 0);
 }
 
 fn <T> current(stream: TokenStream<T>) -> T {

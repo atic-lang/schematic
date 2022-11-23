@@ -3,16 +3,17 @@ use atic.schematic.Path;
 use atic.schematic.Atic;
 use atic.schematic.tokens.Node;
 use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.TokenStream;
 use atic.schematic.type.StaticTypes;
 use atic.schematic.type.Type;
 use atic.schematic.type.TypeSystem;
 use atic.schematic.lexer.GrammarReader;
+use atic.schematic.lexer.MatchFile;
 use atic.schematic.compiler.Compiler;
 use atic.schematic.lexer.Lexer;
 use atic.schematic.Context;
 use atic.schematic.Statement;
 use atic.schematic.Expression;
-
 
 fn main() {
     print("new syntax test");
@@ -367,9 +368,14 @@ fn generateNode(src: string, tokens: List<Token>, rules: RuleSet, usageMap: Map<
          else if token.token.alias == "#whitespace" return false;
          else return true;
     });
-
-    let node: Node = reverseRule(rules,"entry",filtered, usageMap);
-    return node;
+     let tryParse = ruleentry(generateTokenStream(filtered));
+     if tryParse matches Some(node) {
+         return node;
+     } else matches None() {
+         throw AssertError("Cant parse unit");
+     }
+    // let node: Node = reverseRule(rules,"entry",filtered, usageMap);
+    // return node;
 }
 
 fn forFile(file: string, list: List<string>) {

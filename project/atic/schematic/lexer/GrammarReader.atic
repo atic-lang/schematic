@@ -26,7 +26,7 @@ fn generateRuleSet(lines: List<string>) -> RuleSet {
         if testToken(stream, "comment") {
             return;
         }
-
+        
         resolves;
         rules;
         let rule: Rule = genRule(stream, fn (name: string, ref: Entry) -> void {
@@ -39,9 +39,7 @@ fn generateRuleSet(lines: List<string>) -> RuleSet {
             };
             insert(resolves,f);
         });
-
         insert(rules,rule);
-
     });
     forEach(resolves,fn (func: fn() -> void) -> void {
         func();

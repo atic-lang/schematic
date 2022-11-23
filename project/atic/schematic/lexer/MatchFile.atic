@@ -1,0 +1,4650 @@
+use atic.schematic.project.Project;
+use atic.schematic.Path;
+use atic.schematic.Atic;
+use atic.schematic.tokens.Node;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.TokenStream;
+use atic.schematic.lexer.GrammarReader;
+
+
+// Generated Code via CFG file
+
+fn assertNodeType(case: bool, name: string, stream: TokenStream<TokenRecord>) {
+    if case {
+        throw ExpectedNodeException(name);
+    }
+}
+
+fn assertNodeLiteral(case: bool, name: string, stream: TokenStream<TokenRecord>) {
+    if case {
+		if !hasEntriesLeft(stream) {
+			stream.index = stream.index - 1;
+		}
+        throw ExpectedLiteralException(name + " expected but got " + current(stream).token.alias);
+    }
+}
+
+fn getLiteral(stream: TokenStream<TokenRecord>, name: string) -> Optional<Node> {
+    let token = current(stream);
+    consume(stream);
+	if !hasEntriesLeft(stream) {
+		stream.index = stream.index - 1;
+    }
+    if token.token.alias != name {
+        return Optional.None<Node>();
+    } else {
+        return Optional.Some(Node(token, name, true, newList<Node>()));
+    }
+}
+
+
+exception struct ExpectedNodeException {
+    nodeName: string;
+}
+
+exception struct ExpectedLiteralException {
+    nodeName: string;
+}
+
+
+
+
+
+fn ruleentry(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletopList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "topList", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "entry", false, list));
+}
+
+fn ruletopList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletopList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletopList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletopList2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletopList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletop(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruletopList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "topList", false, list));
+
+}
+
+fn ruletopList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletop(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "topList", false, list));
+
+}
+
+fn ruletopList2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "topList", false, list));
+
+}
+
+
+fn ruletop(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletop0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletop1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletop2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletop3(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletop0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulestruct(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "top", false, list));
+
+}
+
+fn ruletop1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletopFunction(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "top", false, list));
+
+}
+
+fn ruletop2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleimport(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "top", false, list));
+
+}
+
+fn ruletop3(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleenumDef(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "top", false, list));
+
+}
+
+
+fn ruleimport(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "use");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulenChain(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "nChain", stream);
+	}
+
+	let r1 = ruleendOfStatement(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "import", false, list));
+}
+
+fn ruletopFunction(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleproperties(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "fn");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r1 = rulegenericsOptional(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "genericsOptional", stream);
+	}
+
+	let r2 = ruleid(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "id", stream);
+	}
+
+	let l1 = getLiteral(stream, "(");
+	if l1 matches None() {
+		assertNodeLiteral(true, "(", stream);
+	}
+
+	let r3 = ruledeclarationList(stream);
+	if r3 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "declarationList", stream);
+	}
+
+	let l2 = getLiteral(stream, ")");
+	if l2 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+	let r4 = rulereturnType(stream);
+	if r4 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "returnType", stream);
+	}
+
+	let r5 = ruleblockStatement(stream);
+	if r5 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "blockStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "topFunction", false, list));
+}
+
+fn ruletopDefinition(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "global");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "id", stream);
+	}
+
+	let l1 = getLiteral(stream, ":");
+	if l1 matches None() {
+		stream.index = index;
+		return l1;
+	}
+
+	let r1 = ruletype(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+	let l2 = getLiteral(stream, "=");
+	if l2 matches None() {
+		assertNodeLiteral(true, "=", stream);
+	}
+
+	let r2 = ruleexpression(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "expression", stream);
+	}
+
+	let r3 = ruleendOfStatement(stream);
+	if r3 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "topDefinition", false, list));
+}
+
+fn rulenamespace(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "{");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r1 = ruletopList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "topList", stream);
+	}
+
+	let l1 = getLiteral(stream, "}");
+	if l1 matches None() {
+		assertNodeLiteral(true, "}", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "namespace", false, list));
+}
+
+fn rulestruct(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleproperties(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "struct");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r1 = ruleid(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "id", stream);
+	}
+
+	let r2 = rulegenericsOptional(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "genericsOptional", stream);
+	}
+
+	let l1 = getLiteral(stream, "{");
+	if l1 matches None() {
+		stream.index = index;
+		return l1;
+	}
+
+	let r3 = rulestructDefinitionList(stream);
+	if r3 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "structDefinitionList", stream);
+	}
+
+	let l2 = getLiteral(stream, "}");
+	if l2 matches None() {
+		assertNodeLiteral(true, "}", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "struct", false, list));
+}
+
+fn rulestructDefinitionList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulestructDefinitionList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestructDefinitionList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulestructDefinitionList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulestructDefinition(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulestructDefinitionList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "structDefinitionList", false, list));
+
+}
+
+fn rulestructDefinitionList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "structDefinitionList", false, list));
+
+}
+
+
+fn rulestructDefinition(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, ":");
+	if l0 matches None() {
+		assertNodeLiteral(true, ":", stream);
+	}
+
+	let r1 = ruletype(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+	let r2 = ruleendOfStatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "structDefinition", false, list));
+}
+
+fn rulereturnType(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulereturnType0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulereturnType1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulereturnType0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "->");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruletype(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "returnType", false, list));
+
+}
+
+fn rulereturnType1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "returnType", false, list));
+
+}
+
+
+fn ruleenumDef(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleproperties(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "enum");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r1 = ruleid(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "id", stream);
+	}
+
+	let r2 = rulegenericsOptional(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "genericsOptional", stream);
+	}
+
+	let l1 = getLiteral(stream, "{");
+	if l1 matches None() {
+		assertNodeLiteral(true, "{", stream);
+	}
+
+	let r3 = ruleenumEntries(stream);
+	if r3 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "enumEntries", stream);
+	}
+
+	let l2 = getLiteral(stream, "}");
+	if l2 matches None() {
+		assertNodeLiteral(true, "}", stream);
+	}
+
+	let r4 = ruleendOfStatement(stream);
+	if r4 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "enumDef", false, list));
+}
+
+fn ruleenumEntries(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleenumEntries0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleenumEntries1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleenumEntries0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleenumEntry(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleenumEntries(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "enumEntries", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "enumEntries", false, list));
+
+}
+
+fn ruleenumEntries1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "enumEntries", false, list));
+
+}
+
+
+fn ruleenumEntry(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "(");
+	if l0 matches None() {
+		assertNodeLiteral(true, "(", stream);
+	}
+
+	let r1 = ruletypeList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+	let l1 = getLiteral(stream, ")");
+	if l1 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+	let r2 = ruleendOfStatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "enumEntry", false, list));
+}
+
+fn ruleid(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "keyword");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "id", false, list));
+}
+
+fn ruledeclarationList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruledeclarationList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruledeclarationList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruledeclarationList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruledeclaration(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruledeclarationListOpt(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "declarationList", false, list));
+
+}
+
+fn ruledeclarationList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "declarationList", false, list));
+
+}
+
+
+fn ruledeclarationListOpt(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruledeclarationListOpt0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruledeclarationListOpt1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruledeclarationListOpt0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ",");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruledeclarationList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "declarationList", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "declarationListOpt", false, list));
+
+}
+
+fn ruledeclarationListOpt1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "declarationListOpt", false, list));
+
+}
+
+
+fn ruledeclaration(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, ":");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r1 = ruletype(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "declaration", false, list));
+}
+
+fn ruletype(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletype0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletype1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletype2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletype0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleclassType(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "type", false, list));
+
+}
+
+fn ruletype1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulearrayType(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "type", false, list));
+
+}
+
+fn ruletype2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulefunctionType(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "type", false, list));
+
+}
+
+
+fn ruletypeList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletypeList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletypeList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletypeList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletype(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruletypeListOpt(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeList", false, list));
+
+}
+
+fn ruletypeList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeList", false, list));
+
+}
+
+
+fn ruletypeListOpt(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletypeListOpt0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletypeListOpt1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletypeListOpt0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ",");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruletypeList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeListOpt", false, list));
+
+}
+
+fn ruletypeListOpt1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeListOpt", false, list));
+
+}
+
+
+fn ruleclassType(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulenChain(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulegenericsOptionalType(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "genericsOptionalType", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "classType", false, list));
+}
+
+fn rulearrayType(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "lst");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruletype(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "arrayType", false, list));
+}
+
+fn rulefunctionType(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "fn");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let l1 = getLiteral(stream, "(");
+	if l1 matches None() {
+		assertNodeLiteral(true, "(", stream);
+	}
+
+	let r0 = ruletypeList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "typeList", stream);
+	}
+
+	let l2 = getLiteral(stream, ")");
+	if l2 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+	let l3 = getLiteral(stream, "->");
+	if l3 matches None() {
+		assertNodeLiteral(true, "->", stream);
+	}
+
+	let r1 = ruletype(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "functionType", false, list));
+}
+
+fn ruletypeChain(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletypeChain0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletypeChain1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletypeChain0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ".");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruletypeChain(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeChain", false, list));
+
+}
+
+fn ruletypeChain1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeChain", false, list));
+
+}
+
+
+fn ruletypeChainOpt(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletypeChainOpt0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletypeChainOpt1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletypeChainOpt0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletypeChain(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeChainOpt", false, list));
+
+}
+
+fn ruletypeChainOpt1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeChainOpt", false, list));
+
+}
+
+
+fn rulenChain(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruletypeChainOpt(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "nChain", false, list));
+}
+
+fn ruleproperties(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleproperties0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleproperties1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleproperties0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleproperty(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleproperties(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "properties", false, list));
+
+}
+
+fn ruleproperties1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "properties", false, list));
+
+}
+
+
+fn ruleproperty(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleproperty0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleproperty1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleproperty2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleproperty3(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleproperty0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulenative(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "property", false, list));
+
+}
+
+fn ruleproperty1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulestrict(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "property", false, list));
+
+}
+
+fn ruleproperty2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleasync(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "property", false, list));
+
+}
+
+fn ruleproperty3(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleexception(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "property", false, list));
+
+}
+
+
+fn rulenative(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "native");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "native", false, list));
+}
+
+fn ruleexception(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "exception");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "exception", false, list));
+}
+
+fn rulestrict(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "strict");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "strict", false, list));
+}
+
+fn ruleasync(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "async");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "async", false, list));
+}
+
+fn rulestatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulestatement0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement3(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement4(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement5(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement6(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement7(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatement8(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulestatement0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleblockStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruledefinitionStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulereturnStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement3(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulewhileStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement4(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulematchStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement5(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulebranchStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement6(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleassignStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement7(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulesingleExpression(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+fn rulestatement8(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulethrowStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statement", false, list));
+
+}
+
+
+fn rulestatementList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulestatementList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulestatementList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulestatementList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulestatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulestatementList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statementList", false, list));
+
+}
+
+fn rulestatementList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "statementList", false, list));
+
+}
+
+
+fn ruleblockStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "{");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulestatementList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statementList", stream);
+	}
+
+	let l1 = getLiteral(stream, "}");
+	if l1 matches None() {
+		assertNodeLiteral(true, "}", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "blockStatement", false, list));
+}
+
+fn ruledefinitionStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletypeOfDefinition(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleid(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "id", stream);
+	}
+
+	let r2 = ruletypeOfVar(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "typeOfVar", stream);
+	}
+
+	let l0 = getLiteral(stream, "=");
+	if l0 matches None() {
+		assertNodeLiteral(true, "=", stream);
+	}
+
+	let r3 = ruleexpression(stream);
+	if r3 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "expression", stream);
+	}
+
+	let r4 = ruleendOfStatement(stream);
+	if r4 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "definitionStatement", false, list));
+}
+
+fn rulewhileStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "while");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleexpression(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "expression", stream);
+	}
+
+	let r1 = rulestatement(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "whileStatement", false, list));
+}
+
+fn rulebranchStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "if");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleexpression(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "expression", stream);
+	}
+
+	let r1 = rulematches(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "matches", stream);
+	}
+
+	let r2 = rulestatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statement", stream);
+	}
+
+	let r3 = ruleendOfBranch(stream);
+	if r3 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfBranch", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "branchStatement", false, list));
+}
+
+fn rulereturnStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "return");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulereturnValue(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "returnValue", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "returnStatement", false, list));
+}
+
+fn rulereturnValue(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulereturnValue0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulereturnValue1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulereturnValue2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulereturnValue0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ";");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "returnValue", false, list));
+
+}
+
+fn rulereturnValue1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleexpression(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleendOfStatement(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "returnValue", false, list));
+
+}
+
+fn rulereturnValue2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleendOfStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "returnValue", false, list));
+
+}
+
+
+fn ruleassignStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulemember(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "=");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r1 = ruleexpression(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "expression", stream);
+	}
+
+	let r2 = ruleendOfStatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "assignStatement", false, list));
+}
+
+fn rulesingleExpression(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulemember(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleendOfStatement(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfStatement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "singleExpression", false, list));
+}
+
+fn rulematches(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulematches0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulematches1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulematches0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "matches");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulenChain(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "nChain", stream);
+	}
+
+	let l1 = getLiteral(stream, "(");
+	if l1 matches None() {
+		assertNodeLiteral(true, "(", stream);
+	}
+
+	let r1 = ruleidList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "idList", stream);
+	}
+
+	let l2 = getLiteral(stream, ")");
+	if l2 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "matches", false, list));
+
+}
+
+fn rulematches1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "matches", false, list));
+
+}
+
+
+fn rulematchStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "match");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleexpression(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "expression", stream);
+	}
+
+	let l1 = getLiteral(stream, "{");
+	if l1 matches None() {
+		assertNodeLiteral(true, "{", stream);
+	}
+
+	let r1 = rulematchEntries(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "matchEntries", stream);
+	}
+
+	let l2 = getLiteral(stream, "}");
+	if l2 matches None() {
+		assertNodeLiteral(true, "}", stream);
+	}
+
+	let r2 = ruleendOfBranch(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "endOfBranch", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "matchStatement", false, list));
+}
+
+fn rulematchEntries(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulematchEntries0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulematchEntries1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulematchEntries0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulematchEntry(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulematchEntries(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "matchEntries", false, list));
+
+}
+
+fn rulematchEntries1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "matchEntries", false, list));
+
+}
+
+
+fn rulematchEntry(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulenChain(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "(");
+	if l0 matches None() {
+		assertNodeLiteral(true, "(", stream);
+	}
+
+	let r1 = ruleidList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+	let l1 = getLiteral(stream, ")");
+	if l1 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+	let l2 = getLiteral(stream, "->");
+	if l2 matches None() {
+		assertNodeLiteral(true, "->", stream);
+	}
+
+	let r2 = rulestatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "matchEntry", false, list));
+}
+
+fn rulegenericsOptional(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulegenericsOptional0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulegenericsOptional1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulegenericsOptional0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulegenerics(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "genericsOptional", false, list));
+
+}
+
+fn rulegenericsOptional1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "genericsOptional", false, list));
+
+}
+
+
+fn rulegenerics(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "<");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleidList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "idList", stream);
+	}
+
+	let l1 = getLiteral(stream, ">");
+	if l1 matches None() {
+		assertNodeLiteral(true, ">", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "generics", false, list));
+}
+
+fn rulegenericsOptionalType(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulegenericsOptionalType0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulegenericsOptionalType1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulegenericsOptionalType0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulegenericsType(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "genericsOptionalType", false, list));
+
+}
+
+fn rulegenericsOptionalType1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "genericsOptionalType", false, list));
+
+}
+
+
+fn rulegenericsType(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "<");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruletypeList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l1 = getLiteral(stream, ">");
+	if l1 matches None() {
+		stream.index = index;
+		return l1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "genericsType", false, list));
+}
+
+fn ruletryStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "try");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulenChain(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "nChain", stream);
+	}
+
+	let r1 = rulestatement(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statement", stream);
+	}
+
+	let l1 = getLiteral(stream, "else");
+	if l1 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		assertNodeLiteral(true, "else", stream);
+	}
+
+	let r2 = rulestatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "tryStatement", false, list));
+}
+
+fn rulethrowStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "throw");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulenChain(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "nChain", stream);
+	}
+
+	let r1 = rulecallAccess(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+	let r2 = ruleendOfStatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r2;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "throwStatement", false, list));
+}
+
+fn ruleendOfStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleendOfStatement0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleendOfStatement1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleendOfStatement0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ";");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "endOfStatement", false, list));
+
+}
+
+fn ruleendOfStatement1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "endOfStatement", false, list));
+
+}
+
+
+fn ruleelseStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "else");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulematches(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "matches", stream);
+	}
+
+	let r1 = rulestatement(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "elseStatement", false, list));
+}
+
+fn ruleendOfBranch(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleendOfBranch0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleendOfBranch1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleendOfBranch0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleelseStatement(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "endOfBranch", false, list));
+
+}
+
+fn ruleendOfBranch1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "endOfBranch", false, list));
+
+}
+
+
+fn ruletypeOfDefinition(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletypeOfDefinition0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletypeOfDefinition1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletypeOfDefinition0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "let");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeOfDefinition", false, list));
+
+}
+
+fn ruletypeOfDefinition1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "const");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeOfDefinition", false, list));
+
+}
+
+
+fn ruletypeOfVar(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletypeOfVar0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletypeOfVar1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletypeOfVar0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ":");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruletype(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeOfVar", false, list));
+
+}
+
+fn ruletypeOfVar1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "typeOfVar", false, list));
+
+}
+
+
+fn ruleexpression(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleexpression0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleexpression1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleexpression0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulefunction(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "expression", false, list));
+
+}
+
+fn ruleexpression1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleboolArithmetic(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "expression", false, list));
+
+}
+
+
+fn ruleboolArithmetic(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulecomparisonArithmetic(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleboolRight(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "boolRight", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "boolArithmetic", false, list));
+}
+
+fn rulecomparisonArithmetic(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulearithmetic(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulecomparisonRight(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "comparisonRight", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonArithmetic", false, list));
+}
+
+fn rulearithmetic(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleterm(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulearithmeticRight(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "arithmeticRight", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "arithmetic", false, list));
+}
+
+fn ruleterm(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulefactor(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruletermRight(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "termRight", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "term", false, list));
+}
+
+fn rulefactor(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulefactor0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulefactor1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulefactor2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulefactor3(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulefactor4(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulefactor5(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulefactor6(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulefactor0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleunary(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "factor", false, list));
+
+}
+
+fn rulefactor1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulenot(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "factor", false, list));
+
+}
+
+fn rulefactor2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulenumber(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "factor", false, list));
+
+}
+
+fn rulefactor3(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleboolLiteral(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "factor", false, list));
+
+}
+
+fn rulefactor4(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulestring(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "factor", false, list));
+
+}
+
+fn rulefactor5(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "(");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleboolArithmetic(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "boolArithmetic", stream);
+	}
+
+	let l1 = getLiteral(stream, ")");
+	if l1 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "factor", false, list));
+
+}
+
+fn rulefactor6(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulemember(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "factor", false, list));
+
+}
+
+
+fn ruleboolRight(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleboolRight0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleboolRight1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleboolRight0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleboolArithmeticFunc(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleboolArithmetic(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "boolArithmetic", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "boolRight", false, list));
+
+}
+
+fn ruleboolRight1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "boolRight", false, list));
+
+}
+
+
+fn rulecomparisonRight(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulecomparisonRight0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulecomparisonRight1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulecomparisonRight0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulecomparisonArithmeticFunc(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulecomparisonArithmetic(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "comparisonArithmetic", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonRight", false, list));
+
+}
+
+fn rulecomparisonRight1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonRight", false, list));
+
+}
+
+
+fn rulearithmeticRight(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulearithmeticRight0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulearithmeticRight1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulearithmeticRight0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulearithmeticFunc(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulearithmetic(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "arithmetic", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "arithmeticRight", false, list));
+
+}
+
+fn rulearithmeticRight1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "arithmeticRight", false, list));
+
+}
+
+
+fn ruletermRight(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletermRight0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletermRight1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletermRight0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruletermFunc(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleterm(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "term", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "termRight", false, list));
+
+}
+
+fn ruletermRight1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "termRight", false, list));
+
+}
+
+
+fn rulestring(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "string");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "string", false, list));
+}
+
+fn ruleunary(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "-");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulefactor(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "unary", false, list));
+}
+
+fn rulenot(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "!");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = rulefactor(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "not", false, list));
+}
+
+fn rulenumber(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "number");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "number", false, list));
+}
+
+fn ruleboolLiteral(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleboolLiteral0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleboolLiteral1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleboolLiteral0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "false");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "boolLiteral", false, list));
+
+}
+
+fn ruleboolLiteral1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "true");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "boolLiteral", false, list));
+
+}
+
+
+fn rulemember(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulememberCompoundOpt(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "member", false, list));
+}
+
+fn rulememberCompound(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulevarTerminal(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = rulememberCompoundOpt(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "memberCompound", false, list));
+}
+
+fn rulememberCompoundOpt(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulememberCompoundOpt0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulememberCompoundOpt1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulememberCompoundOpt0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulememberCompound(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "memberCompoundOpt", false, list));
+
+}
+
+fn rulememberCompoundOpt1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "memberCompoundOpt", false, list));
+
+}
+
+
+fn rulevarTerminal(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulevarTerminal0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulevarTerminal1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulevarTerminal2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulevarTerminal0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulememberAccess(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "varTerminal", false, list));
+
+}
+
+fn rulevarTerminal1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulecallAccess(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "varTerminal", false, list));
+
+}
+
+fn rulevarTerminal2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulearrayAccess(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "varTerminal", false, list));
+
+}
+
+
+fn rulememberAccess(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ".");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "id", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "memberAccess", false, list));
+}
+
+fn rulecallAccess(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulegenericsOptionalType(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let l0 = getLiteral(stream, "(");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r1 = ruleargList(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "argList", stream);
+	}
+
+	let l1 = getLiteral(stream, ")");
+	if l1 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "callAccess", false, list));
+}
+
+fn rulearrayAccess(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "[");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleexpression(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "expression", stream);
+	}
+
+	let l1 = getLiteral(stream, "]");
+	if l1 matches None() {
+		assertNodeLiteral(true, "]", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "arrayAccess", false, list));
+}
+
+fn ruleargList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleargList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleargList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleargList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleexpression(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleendL(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "argList", false, list));
+
+}
+
+fn ruleargList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "argList", false, list));
+
+}
+
+
+fn ruleendL(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleendL0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleendL1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleendL0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ",");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleargList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "endL", false, list));
+
+}
+
+fn ruleendL1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "endL", false, list));
+
+}
+
+
+fn ruletermFunc(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruletermFunc0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruletermFunc1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruletermFunc0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "*");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "termFunc", false, list));
+
+}
+
+fn ruletermFunc1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "/");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "termFunc", false, list));
+
+}
+
+
+fn rulearithmeticFunc(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulearithmeticFunc0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulearithmeticFunc1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulearithmeticFunc0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "+");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "arithmeticFunc", false, list));
+
+}
+
+fn rulearithmeticFunc1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "-");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "arithmeticFunc", false, list));
+
+}
+
+
+fn rulecomparisonArithmeticFunc(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = rulecomparisonArithmeticFunc0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulecomparisonArithmeticFunc1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulecomparisonArithmeticFunc2(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulecomparisonArithmeticFunc3(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulecomparisonArithmeticFunc4(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = rulecomparisonArithmeticFunc5(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn rulecomparisonArithmeticFunc0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ">");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonArithmeticFunc", false, list));
+
+}
+
+fn rulecomparisonArithmeticFunc1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ">=");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonArithmeticFunc", false, list));
+
+}
+
+fn rulecomparisonArithmeticFunc2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "<");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonArithmeticFunc", false, list));
+
+}
+
+fn rulecomparisonArithmeticFunc3(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "<=");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonArithmeticFunc", false, list));
+
+}
+
+fn rulecomparisonArithmeticFunc4(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "==");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonArithmeticFunc", false, list));
+
+}
+
+fn rulecomparisonArithmeticFunc5(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "!=");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "comparisonArithmeticFunc", false, list));
+
+}
+
+
+fn ruleboolArithmeticFunc(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleboolArithmeticFunc0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleboolArithmeticFunc1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleboolArithmeticFunc0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "&&");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "boolArithmeticFunc", false, list));
+
+}
+
+fn ruleboolArithmeticFunc1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "||");
+	if l0 matches Some(lit) {
+		insert(list, lit);
+	}
+	else matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "boolArithmeticFunc", false, list));
+
+}
+
+
+fn rulefunction(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = rulerichFunction(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "function", false, list));
+}
+
+fn rulerichFunction(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, "fn");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let l1 = getLiteral(stream, "(");
+	if l1 matches None() {
+		assertNodeLiteral(true, "(", stream);
+	}
+
+	let r0 = ruleoptionalDeclarationList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "optionalDeclarationList", stream);
+	}
+
+	let l2 = getLiteral(stream, ")");
+	if l2 matches None() {
+		assertNodeLiteral(true, ")", stream);
+	}
+
+	let r1 = rulereturnType(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "returnType", stream);
+	}
+
+	let r2 = rulestatement(stream);
+	if r2 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "statement", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "richFunction", false, list));
+}
+
+fn ruleidList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleidList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleidList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleidList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleidListOpt(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "idList", false, list));
+
+}
+
+fn ruleidList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "idList", false, list));
+
+}
+
+
+fn ruleidListOpt(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleidListOpt0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleidListOpt1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleidListOpt0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ",");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleidList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "idListOpt", false, list));
+
+}
+
+fn ruleidListOpt1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "idListOpt", false, list));
+
+}
+
+
+fn ruleoptionalDeclarationList(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleoptionalDeclarationList0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleoptionalDeclarationList1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleoptionalDeclarationList0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleoptionalDeclaration(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleoptionalDeclarationListOpt(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r1;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "optionalDeclarationList", false, list));
+
+}
+
+fn ruleoptionalDeclarationList1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "optionalDeclarationList", false, list));
+
+}
+
+
+fn ruleoptionalDeclarationListOpt(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleoptionalDeclarationListOpt0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleoptionalDeclarationListOpt1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleoptionalDeclarationListOpt0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ",");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruleoptionalDeclarationList(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "optionalDeclarationListOpt", false, list));
+
+}
+
+fn ruleoptionalDeclarationListOpt1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "optionalDeclarationListOpt", false, list));
+
+}
+
+
+fn ruleoptionalDeclaration(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let r0 = ruleid(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		stream.index = index;
+		return r0;
+	}
+
+	let r1 = ruleoptionalDeclType(stream);
+	if r1 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "optionalDeclType", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "optionalDeclaration", false, list));
+}
+
+fn ruleoptionalDeclType(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let node = Optional.None<Node>()
+	let index = stream.index;
+	node = ruleoptionalDeclType0(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	node = ruleoptionalDeclType1(stream); 
+	if node matches Some(unused) {
+		return node;
+	}
+	stream.index = index;
+	return Optional.None<Node>();
+}
+
+fn ruleoptionalDeclType0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+	let l0 = getLiteral(stream, ":");
+	if l0 matches None() {
+		stream.index = index;
+		return l0;
+	}
+
+	let r0 = ruletype(stream);
+	if r0 matches Some(child) {
+		insert(list, child);
+	}
+	else matches None() {
+		assertNodeType(true, "type", stream);
+	}
+
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "optionalDeclType", false, list));
+
+}
+
+fn ruleoptionalDeclType1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
+
+	let index = stream.index;
+	let list = newList<Node>();
+
+	let token = current(stream);
+	return Optional.Some(Node(token, "optionalDeclType", false, list));
+
+}
+
+
+
+
