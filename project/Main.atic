@@ -16,7 +16,7 @@ use atic.schematic.Statement;
 use atic.schematic.Expression;
 
 fn main() {
-    print("new syntax test");
+    print("newest syntax test");
     let defaultImports = newList<Path>();
     insert(defaultImports, Path("Core"));
     let fileFormats = newList<string>();
@@ -359,6 +359,7 @@ fn generateNode(src: string, tokens: List<Token>, rules: RuleSet, usageMap: Map<
     let lineCount: Ref<number> = Ref(0);
     forEach(split(src,"\n"), fn (line: string) -> void {
         let result: List<TokenRecord> = generateTokens(tokens,line,lineCount.value);
+        //let result: List<TokenRecord> = generateTokensJava(line,lineCount.value);
         lineCount.value = lineCount.value + 1;
         addAll(list,result);
     });
@@ -368,12 +369,21 @@ fn generateNode(src: string, tokens: List<Token>, rules: RuleSet, usageMap: Map<
          else if token.token.alias == "#whitespace" return false;
          else return true;
     });
-     let tryParse = ruleentry(generateTokenStream(filtered));
-     if tryParse matches Some(node) {
-         return node;
-     } else matches None() {
-         throw AssertError("Cant parse unit");
-     }
+    //Java code: 
+
+    //return generateGrammar(filtered);
+
+    //Atic Code:
+
+    let tryParse = ruleentry(generateTokenStream(filtered));
+    if tryParse matches Some(node) {
+      return node;
+    } else matches None() {
+      throw AssertError("Cant parse unit");
+    }
+
+    //Grammar File:
+
     // let node: Node = reverseRule(rules,"entry",filtered, usageMap);
     // return node;
 }

@@ -8,7 +8,6 @@ top := struct | topFunction | import | enumDef
 
 import := "use" nChain! endOfStatement!
 topFunction := properties "fn"? genericsOptional! id! "("?! declarationList! ")"?! returnType! blockStatement!
-topDefinition := "global"? id! ":"? type! "="?! expression! endOfStatement!
 namespace := id "{"? topList! "}"?!
 
 //top struct
@@ -30,7 +29,7 @@ declarationListOpt := ","? declarationList! ||
 declaration := id ":"? type!
 
 //type system
-type := classType | arrayType | functionType
+type := arrayType | functionType | classType
 typeList := type typeListOpt ||
 typeListOpt := ","? typeList ||
 classType := nChain genericsOptionalType!
@@ -52,14 +51,14 @@ strict := "strict"
 async :=  "async"
 
 //statement
-statement := blockStatement | definitionStatement | returnStatement | whileStatement |  matchStatement |  branchStatement | assignStatement | singleExpression | throwStatement
+statement := blockStatement | definitionStatement | returnStatement | whileStatement |  matchStatement |  branchStatement | throwStatement | assignStatement | singleExpression 
 statementList := statement statementList ||
 blockStatement := "{"? statementList! "}"?!
 definitionStatement := typeOfDefinition id! typeOfVar! "="?! expression! endOfStatement!
 whileStatement := "while"? expression! statement!
 branchStatement := "if"? expression! matches! statement! endOfBranch!
 returnStatement := "return"? returnValue!
-returnValue := ";"? | expression endOfStatement! | endOfStatement!
+returnValue := ";"? | expression endOfStatement! ||
 assignStatement := member "="? expression! endOfStatement!
 singleExpression := member endOfStatement!
 
@@ -76,7 +75,7 @@ genericsOptionalType := genericsType ||
 genericsType := "<"? typeList ">"?
 
 tryStatement := "try"? nChain! statement! "else"! statement!
-throwStatement := "throw"? nChain! callAccess endOfStatement
+throwStatement := "throw"? nChain! callAccess! endOfStatement!
 
 endOfStatement := ";"? ||
 
@@ -92,7 +91,7 @@ boolArithmetic := comparisonArithmetic boolRight!
 comparisonArithmetic := arithmetic comparisonRight!
 arithmetic := term arithmeticRight!
 term := factor termRight!
-factor :=  unary |  not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | member
+factor := unary | not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | member
 
 
 boolRight := boolArithmeticFunc boolArithmetic! ||

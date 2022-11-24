@@ -132,8 +132,8 @@ fn richFunctionFromNode(node: Node, context: Context , hint: Optional<Type>, ope
             returnType = expectedType;
             // returnType = substitute(returnType, openQuery.resolved)
         } else {
-            throw AssertError("return type missing");
-            // returnType = Type.Primitive("void");
+            //throw AssertError("return type missing");
+             returnType = Type.Primitive("void");
         }
     }
 

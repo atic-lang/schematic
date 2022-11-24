@@ -221,6 +221,22 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                             Member(type, offset) -> {
                                 addInstruction(Instruction.LoadMember(target_, src, offset), info);
                             }
+                            Method(staticFunction, expressions) -> { //here load
+                                let functionRegister = useRegister(info);
+                                addInstruction(Instruction.LoadFunction(functionRegister, staticFunction.path.path), info);
+                        
+                                let argList = newList<number>();
+                                forEachI(expressions, fn (expr: Expression, index: number) -> void {
+                                    let exprTarget = compileExpression(expr, info);
+                                    insert(argList, exprTarget);
+                                });
+                                addInstruction(Instruction.Argument(0, src), info);
+                                forEachI(argList, fn (exprTarget: number, index: number) -> void {
+                                    addInstruction(Instruction.Argument(index + 1, exprTarget), info);
+                                }); 
+                        
+                                addInstruction(Instruction.InvokeFunction(target_, functionRegister), info);
+                            }
                         }
                         src = target_;
                         i = i + 1;
@@ -236,6 +252,9 @@ fn compileStatement(statement: Statement, info: AsmObj) {
                         }
                         Member(type, offset) -> {
                             addInstruction(Instruction.StoreMember(expressionTarget, src, offset), info);
+                        }
+                        Method(unused, unused2) -> {
+                            throw AssertError("cant reassign a function call");
                         }
                     } 
                 }                            
@@ -531,8 +550,24 @@ fn compileMember(member: Member, info: AsmObj) -> number {
 
                         addInstruction(Instruction.InvokeFunction(target_.value, src.value), info);
                     }
-                    Member(type, offset) -> {
+                    Member(type, offset) -> { 
                         addInstruction(Instruction.LoadMember(target_.value, src.value, offset), info);
+                    }
+                    Method(staticFunction, expressions) -> {  //here load
+                        let functionRegister = useRegister(info);
+                        addInstruction(Instruction.LoadFunction(functionRegister, staticFunction.path.path), info);
+                
+                        let argList = newList<number>();
+                        forEachI(expressions, fn (expr: Expression, index: number) -> void {
+                            let exprTarget = compileExpression(expr, info);
+                            insert(argList, exprTarget);
+                        });
+                        addInstruction(Instruction.Argument(0, src.value), info);
+                        forEachI(argList, fn (exprTarget: number, index: number) -> void {
+                            addInstruction(Instruction.Argument(index + 1, exprTarget), info);
+                        }); 
+                
+                        addInstruction(Instruction.InvokeFunction(target_.value, functionRegister), info);
                     }
                 }
                 src.value = target_.value;
@@ -543,7 +578,7 @@ fn compileMember(member: Member, info: AsmObj) -> number {
         let functionRegister = useRegister(info);
         addInstruction(Instruction.LoadFunction(functionRegister, staticFunction.path.path), info);
 
-        //TODO accessList
+
         let argList = newList<number>();
         forEachI(expressions, fn (expr: Expression, index: number) -> void {
             let exprTarget = compileExpression(expr, info);
@@ -579,6 +614,22 @@ fn compileMember(member: Member, info: AsmObj) -> number {
                 }
                 Member(type, offset) -> {
                     addInstruction(Instruction.LoadMember(src.value, src.value, offset), info);
+                }
+                Method(staticFunction_, expressions_) -> {  //here load
+                    let functionRegister_ = useRegister(info);
+                    addInstruction(Instruction.LoadFunction(functionRegister_, staticFunction_.path.path), info);
+            
+                    let argList_ = newList<number>();
+                    forEachI(expressions_, fn (expr: Expression, index: number) -> void {
+                        let exprTarget = compileExpression(expr, info);
+                        insert(argList_, exprTarget);
+                    });
+                    addInstruction(Instruction.Argument(0, src.value), info);
+                    forEachI(argList_, fn (exprTarget: number, index: number) -> void {
+                        addInstruction(Instruction.Argument(index + 1, exprTarget), info);
+                    }); 
+            
+                    addInstruction(Instruction.InvokeFunction(src.value, functionRegister), info);
                 }
             }
         });

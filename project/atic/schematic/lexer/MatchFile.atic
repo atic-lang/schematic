@@ -17,9 +17,9 @@ fn assertNodeType(case: bool, name: string, stream: TokenStream<TokenRecord>) {
 
 fn assertNodeLiteral(case: bool, name: string, stream: TokenStream<TokenRecord>) {
     if case {
-		if !hasEntriesLeft(stream) {
-			stream.index = stream.index - 1;
-		}
+        if !hasEntriesLeft(stream) {
+    	    stream.index = stream.index - 1;
+    	}
         throw ExpectedLiteralException(name + " expected but got " + current(stream).token.alias);
     }
 }
@@ -27,8 +27,8 @@ fn assertNodeLiteral(case: bool, name: string, stream: TokenStream<TokenRecord>)
 fn getLiteral(stream: TokenStream<TokenRecord>, name: string) -> Optional<Node> {
     let token = current(stream);
     consume(stream);
-	if !hasEntriesLeft(stream) {
-		stream.index = stream.index - 1;
+    if !hasEntriesLeft(stream) {
+        stream.index = stream.index - 1;
     }
     if token.token.alias != name {
         return Optional.None<Node>();
@@ -352,64 +352,6 @@ fn ruletopFunction(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let token = current(stream);
 	return Optional.Some(Node(token, "topFunction", false, list));
-}
-
-fn ruletopDefinition(stream: TokenStream<TokenRecord>) -> Optional<Node> {
-
-	let index = stream.index;
-	let list = newList<Node>();
-	let l0 = getLiteral(stream, "global");
-	if l0 matches None() {
-		stream.index = index;
-		return l0;
-	}
-
-	let r0 = ruleid(stream);
-	if r0 matches Some(child) {
-		insert(list, child);
-	}
-	else matches None() {
-		assertNodeType(true, "id", stream);
-	}
-
-	let l1 = getLiteral(stream, ":");
-	if l1 matches None() {
-		stream.index = index;
-		return l1;
-	}
-
-	let r1 = ruletype(stream);
-	if r1 matches Some(child) {
-		insert(list, child);
-	}
-	else matches None() {
-		assertNodeType(true, "type", stream);
-	}
-
-	let l2 = getLiteral(stream, "=");
-	if l2 matches None() {
-		assertNodeLiteral(true, "=", stream);
-	}
-
-	let r2 = ruleexpression(stream);
-	if r2 matches Some(child) {
-		insert(list, child);
-	}
-	else matches None() {
-		assertNodeType(true, "expression", stream);
-	}
-
-	let r3 = ruleendOfStatement(stream);
-	if r3 matches Some(child) {
-		insert(list, child);
-	}
-	else matches None() {
-		assertNodeType(true, "endOfStatement", stream);
-	}
-
-
-	let token = current(stream);
-	return Optional.Some(Node(token, "topDefinition", false, list));
 }
 
 fn rulenamespace(stream: TokenStream<TokenRecord>) -> Optional<Node> {
@@ -998,7 +940,7 @@ fn ruletype0(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let index = stream.index;
 	let list = newList<Node>();
-	let r0 = ruleclassType(stream);
+	let r0 = rulearrayType(stream);
 	if r0 matches Some(child) {
 		insert(list, child);
 	}
@@ -1017,7 +959,7 @@ fn ruletype1(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let index = stream.index;
 	let list = newList<Node>();
-	let r0 = rulearrayType(stream);
+	let r0 = rulefunctionType(stream);
 	if r0 matches Some(child) {
 		insert(list, child);
 	}
@@ -1036,7 +978,7 @@ fn ruletype2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let index = stream.index;
 	let list = newList<Node>();
-	let r0 = rulefunctionType(stream);
+	let r0 = ruleclassType(stream);
 	if r0 matches Some(child) {
 		insert(list, child);
 	}
@@ -1781,7 +1723,7 @@ fn rulestatement6(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let index = stream.index;
 	let list = newList<Node>();
-	let r0 = ruleassignStatement(stream);
+	let r0 = rulethrowStatement(stream);
 	if r0 matches Some(child) {
 		insert(list, child);
 	}
@@ -1800,7 +1742,7 @@ fn rulestatement7(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let index = stream.index;
 	let list = newList<Node>();
-	let r0 = rulesingleExpression(stream);
+	let r0 = ruleassignStatement(stream);
 	if r0 matches Some(child) {
 		insert(list, child);
 	}
@@ -1819,7 +1761,7 @@ fn rulestatement8(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let index = stream.index;
 	let list = newList<Node>();
-	let r0 = rulethrowStatement(stream);
+	let r0 = rulesingleExpression(stream);
 	if r0 matches Some(child) {
 		insert(list, child);
 	}
@@ -2141,14 +2083,6 @@ fn rulereturnValue2(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 
 	let index = stream.index;
 	let list = newList<Node>();
-	let r0 = ruleendOfStatement(stream);
-	if r0 matches Some(child) {
-		insert(list, child);
-	}
-	else matches None() {
-		assertNodeType(true, "endOfStatement", stream);
-	}
-
 
 	let token = current(stream);
 	return Optional.Some(Node(token, "returnValue", false, list));
@@ -2665,8 +2599,7 @@ fn rulethrowStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 		insert(list, child);
 	}
 	else matches None() {
-		stream.index = index;
-		return r1;
+		assertNodeType(true, "callAccess", stream);
 	}
 
 	let r2 = ruleendOfStatement(stream);
@@ -2674,8 +2607,7 @@ fn rulethrowStatement(stream: TokenStream<TokenRecord>) -> Optional<Node> {
 		insert(list, child);
 	}
 	else matches None() {
-		stream.index = index;
-		return r2;
+		assertNodeType(true, "endOfStatement", stream);
 	}
 
 

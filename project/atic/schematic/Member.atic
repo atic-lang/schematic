@@ -25,6 +25,7 @@ enum Access {
     Array(Type, Expression);
     Call(Type, List<Expression>);
     Member(Type, number);
+    Method(StaticFunction, List<Expression>);
 }
 
 fn memberUsages(member: Member) -> List<Variable> {
@@ -67,6 +68,11 @@ fn usagesFromAccess(accesses: List<Access>) -> List<Variable> {
                     addAll(variables, expressionUsages(expr));
                 });
             }
+            Method(unused, expressions) -> {
+                forEach(expressions, fn(expr: Expression) -> void {
+                    addAll(variables, expressionUsages(expr));
+                });
+            }
             Member(Type, number) -> {
                 
             }
@@ -103,8 +109,8 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                         insert(argList, var.type);
                     });
                     let asFunctionType = FunctionType(argList, staticFunction.output, staticFunction.generics);
-                    let call = callAccess(CallableType.Function(asFunctionType), callNode, context);
-                    //TODO implement remaining access
+                    let noHint = Optional.None<Type>();
+                    let call = callAccess(CallableType.Function(asFunctionType, noHint), callNode, context);
                     let subList = newList<Node>();
                     forEachI(nodeComponents, fn (subN: Node, index: number) -> void {
                         if index != 0 {
@@ -162,19 +168,24 @@ fn getAccessInfos(node: Node, startType: Type, nodeComponents: List<Node>, conte
     let compounds = newList<Access>();
     let typeRef = Ref(startType);
     if isPresent(node, "memberCompoundOpt") {
-        forEach(nodeComponents, fn (subNode: Node) -> void {
+        let j: number = 0;
+        let componentSize: number = nodeComponents.size;
+
+        while j < componentSize {
+            let subNode: Node = getAt(nodeComponents, j);
             let subTerm: Node = child(subNode);
             let subName = subTerm.name;
             if subName == "memberAccess" {
                 let inType: Type = typeRef.value;
+                let memberName: string = id(subTerm);
+                let tryAsStatic = true;
                 if inType matches Struct(structImpl) {
-                    let memberName: string = id(subTerm);
                     let memberReference = Optional.None<Type>();
                     let memberIndex = -1;
                     let list = getMembers(structImpl);
                     let i: number = 0;
                     let s: number = list.size;
-
+                    tryAsStatic = false;
                     while i < s {
                         let element: BIEntry<string,Type> = getAt(list,i);
                         if element.key == memberName {
@@ -185,24 +196,53 @@ fn getAccessInfos(node: Node, startType: Type, nodeComponents: List<Node>, conte
                     }
 
                     if memberReference matches None() {
-                        throw AssertError("cant find member " + memberName);
+                        tryAsStatic = true;
                     } else matches Some(member) {
                         let access = Access.Member(member, memberIndex);
                         insert(compounds, access);
                         typeRef.value = member;
                     }
-                } else {
-                    throw AssertError("cant access a member from here");
+                }
+                if tryAsStatic {
+                    let pathOption = askFor(context, Path(memberName));
+                    if pathOption matches Some(pathEntry) {
+                        if pathEntry matches Function(staticFunction) {
+                            if j + 1 < componentSize {
+                                j = j + 1;
+                                let callNode: Node = child(getAt(nodeComponents, j));
+                                if callNode.name != "callAccess" {
+                                    throw AssertError("you can only call a static function");
+                                }
+                                let argList = newList<Type>();
+                                forEach(staticFunction.inputs, fn (var: Variable) -> void {
+                                    insert(argList, var.type);
+                                });
+
+                                let asFunctionType = FunctionType(argList, staticFunction.output, staticFunction.generics);
+                                let call = callAccess(CallableType.Function(asFunctionType, Optional.Some(typeRef.value)), callNode, context);
+                                let access = Access.Method(staticFunction, call.arguments);
+                                insert(compounds, access);
+                                typeRef.value = call.returnType;
+
+                            } else {
+                                throw AssertError("you have to call static functions directy: " + memberName);        
+                            }
+                        } else {
+                            throw AssertError("cant find function or member " + memberName);
+                        }
+                    } else {
+                        throw AssertError("cant access member or cant find static function from " + memberName);
+                    }
                 }
             } else if subName == "callAccess" {
                 let inType: Type = typeRef.value;
                 if inType matches Function(functionType) {
-                    let call = callAccess(CallableType.Function(functionType), subTerm, context);
+                    let call = callAccess(CallableType.Function(functionType, Optional.None<Type>()), subTerm, context);
                     let access = Access.Call(call.returnType, call.arguments);
                     insert(compounds, access);
                     typeRef.value = call.returnType;
                 } else {
-                    throw AssertError("only call a function");
+                    throw AssertError("only call a function " + toString(j));
                 }
             } else if subName == "arrayAccess" {
                 let inType: Type = typeRef.value;
@@ -217,7 +257,8 @@ fn getAccessInfos(node: Node, startType: Type, nodeComponents: List<Node>, conte
             } else {
                 throw AssertError("unknown access a here");
             }
-        });
+            j = j + 1;
+        }
     }
     return AccessInfo(compounds, typeRef.value);
 }
@@ -228,7 +269,7 @@ struct AccessInfo {
 }
 
 enum CallableType {
-    Function(FunctionType);
+    Function(FunctionType, Optional<Type>);
     Struct(Struct);
     Enum(Enum, EnumEntry);
 }
@@ -257,38 +298,15 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
     
     let walkList = newList<Node>();
     collectArgList(getNode(node, "argList"), walkList);
-    // print(toString(walkList.size) + " arg size for " + toString(node.record.position.line));
-
     let hints = newMap<number, Type>();
 
-   //if callable matches Function(functionType) {
-   //    forEachI(functionType.inputs, fn(input: Type, index: number) -> void {
-   //        put(hints, index, input);
-   //    });
-   //} else if callable matches Struct(struct_) {
-   //    forEachI(struct_.members, fn(entry: BIEntry<string, Type>, index: number) -> void {
-   //        put(hints, index, entry.value);
-   //    });
-   //}  else if callable matches Enum(enum_, enumEntry) {
-   //    forEachI(enumEntry.components, fn(input: Type, index: number) -> void {
-   //        put(hints, index, input);
-   //    });
-   //}
-
-
-
-    // forEachI(walkList, fn (subNode_: Node, index: number) -> void {
-        // let hint = Optional.None<Type>();
-        // if get(hints, index) matches Some(expected) {
-            // hint = Optional.Some(expected);
-        // }
-        // let expr = exprFromNode(subNode_, context, hint, emptyQuery());
-        // insert(exprList, expr);
-    // });
-
-    if callable matches Function(functionType) {
+    if callable matches Function(functionType, caller) {
         
-        if walkList.size != functionType.inputs.size {
+        if caller matches Some (calling) {
+            if walkList.size != (functionType.inputs.size - 1) {
+                throw AssertError("incompatible arg size with caller");
+            }
+        } else if walkList.size != functionType.inputs.size {
             throw AssertError("incompatible arg size");
         }
         let generics = functionType.generics;
@@ -309,13 +327,26 @@ fn callAccess(callable: CallableType, node: Node, context: Context) -> CallAcces
         }
 
         let i: number = 0;
+        let firstParamOffset = 0;
         let s: number = walkList.size;
 
         let exprList = newList<Expression>();
+
+        if caller matches Some (calling) {
+            if (functionType.inputs.size > 0) {
+                let expected: Type = getAt(functionType.inputs,0);
+                if !testTypes(expected, calling, query) {
+                    print("expected " + typeToSting(expected));
+                    print("but got " + typeToSting(calling));
+                    throw AssertError("incompatible caller with first parameter on function call");
+                }
+                firstParamOffset = 1;
+            }
+        }
        
         while i < s {
-            let expected: Type = getAt(functionType.inputs,i);
-            let expr = exprFromNode(getAt(walkList,i), context, Optional.Some(expected), query);
+            let expected: Type = getAt(functionType.inputs,i + firstParamOffset);
+            let expr = exprFromNode(getAt(walkList, i), context, Optional.Some(expected), query);
             let found: Type = getExprType(expr);
             if !testTypes(expected, found, query) {
                 print("expected " + typeToSting(expected));

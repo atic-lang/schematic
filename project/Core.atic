@@ -168,3 +168,9 @@ native fn charAt(text: string,index: number) -> string {}
 native fn split(text: string,pattern: string) -> List<string> {}
 native fn ignoreCase(textA: string, textB: string) -> bool {}
 native fn <T> hash(obj: T) -> number {}
+
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.Node;
+
+native fn generateGrammar(tokens: List<TokenRecord>) -> Node {}
+native fn generateTokensJava(text: string, line: number) -> List<TokenRecord> {}

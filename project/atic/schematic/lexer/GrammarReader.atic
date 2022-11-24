@@ -11,7 +11,8 @@ fn generateRuleSet(lines: List<string>) -> RuleSet {
     let lineCount: Ref<number> = Ref(0);
     forEach(lines, fn (line: string) -> void {
         let lineCounter: number = lineCount.value;
-        let result: List<TokenRecord> = generateTokens(tokens,line,lineCounter);
+         let result: List<TokenRecord> = generateTokens(tokens,line,lineCounter);
+        //let result: List<TokenRecord> = generateTokensJava(line,lineCounter);
         lineCount.value = lineCount.value + 1;
 
         let filtered: List<TokenRecord> = filter(result, fn (token: TokenRecord) -> bool {
