@@ -3,7 +3,7 @@
 </h1>
 <div align="center">
   <strong>
-        The Compiler for the Atic Language written in itself
+        The Atic Compiler
   </strong>
 </div>
 
