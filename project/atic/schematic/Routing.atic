@@ -1,0 +1,153 @@
+use atic.schematic.Atic;
+
+
+
+struct PathRouter {
+    parent: Optional<PathRouter>
+    name: string;
+    entries: List<RouterEntry>;
+}
+
+enum RouterEntry { 
+    Router(PathRouter);
+    Unit(PathUnit);
+}
+
+fn addRouter(router: PathRouter, subRouter: PathRouter) {
+    let subRouterName = subRouter.name;
+    if router.entries.findAny(fn (ref) {
+        return ref.routerEntryName() == subRouterName;
+    }) matches Some(duplicate) {
+        throw AssertError("duplicate Router or Unit id " + subRouterName);
+    } else {
+        router.entries.insert(RouterEntry.PathRouter(subRouter));
+    } 
+} 
+  
+fn addUnit(router: PathRouter, subUnit: PathUnit) {
+    let subUnitName = subUnit.name;
+    if router.entries.findAny(fn (ref) {
+        return ref.routerEntryName() == subUnitName;
+    }) matches Some(duplicate) {
+        throw AssertError("duplicate Router or Unit id " + subUnitName);
+    } else {
+        router.entries.insert(RouterEntry.Unit(subUnit));
+    } 
+}
+
+//finds the PathUnit at the bottom of the id chain supplied by the String list "routing"
+fn naviagteToUnit(router: PathRouter, routing: List<string>) -> PathUnit {
+    let entry: RouterEntry = RouterEntry.Router(router);
+    //string builder
+    let bob = "";
+
+    let index = 0;
+    while index < routing.size {
+        let name: string = routing.getAt(index);
+        bob = bob + name + "."
+        if entry matches Router(subRouter) {
+            if subRouter.entries.findAny(fn (element) {
+                return element.routerEntryName() == name;
+            }) matches Some(ref) {
+                entry = ref;
+            } else {
+                throw AssertError("import path " + bob + " could not be found");
+            }
+        } else {
+            throw AssertError("cant import subpath " + bob + " from a Unit");
+        }
+        index += 1;
+    }
+
+    if entry matches Unit(unit) {
+        return unit;
+    } else matches Router(subRouter) {
+        throw AssertError(bob + " is a path, not a unit");
+    } 
+
+}
+
+
+
+
+
+fn routerEntryName(entry: RouterEntry) -> string {
+    match entry {
+        Router(ref) -> {
+            return ref.name;
+        }
+        Unit(ref) -> {
+            return ref.name;
+        }
+    }
+}
+
+struct PathUnit {
+    parent: PathRouter;
+    name: string;
+    imports: List<PathUnit>;
+    entries: List<UnitEntry>;
+    node: Node;
+}
+
+enum UnitEntry {
+    Struct(PathStruct);
+    Enum(PathEnum);
+    Function(PathFunction);
+}
+
+fn addImport(unit: PathUnit, import: PathUnit) {
+    if unit.eq(import) {
+        throw AssertError("import referenced itself in Unit " + import.name);
+    } 
+    if unit.imports.findAny(fn (current) {
+        return eq(import, current);
+    }) matches Some(duplicate) {
+        throw AssertError("duplicate Import of Unit " + import.name)
+    } else matches None() {
+        unit.imports.insert(import);
+    }
+}
+
+fn addToUnit(unit: PathUnit, entry: UnitEntry) {
+    let addName = entry.unitEntryName();
+    if unit.entries.findAny(fn (ref) {
+        let currentName = ref.unitEntryName();
+        return currentName == addName; 
+    }) matches Some(duplicate) {
+        throw AssertError("Entry " + addName + " does already exist");
+    } else {
+        unit.entries.insert(entry);
+    }
+}
+
+fn unitEntryName(entry: UnitEntry) -> string {
+    match entry {
+        Struct(entry_) -> {
+            return entry_.name;
+        }
+        Enum(entry_) -> {
+            return entry_.name;
+        }
+        Function(entry_) -> {
+            return entry_.name;
+        }
+    }
+}
+
+struct PathFunction {
+    name: string;
+}
+
+struct PathField {
+    name: string;
+}
+
+struct PathStruct {
+    name: string;
+}
+
+struct PathEnum {
+    name: string;
+}
+

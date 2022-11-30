@@ -3,12 +3,12 @@
 //"#" will not capture the token
 entry := topList!
 
-topList := top topList | top ||
-top := struct | topFunction | import | enumDef
+topList := top topList ||
+top := struct | topFunction | import | enumDef | namespace
 
 import := "use" nChain! endOfStatement!
 topFunction := properties "fn"? genericsOptional! id! "("?! declarationList! ")"?! returnType! blockStatement!
-namespace := id "{"? topList! "}"?!
+namespace := properties id "{"? topList! "}"?!
 
 //top struct
 struct := properties "struct"? id! genericsOptional! "{"? structDefinitionList! "}"?!
@@ -50,6 +50,9 @@ exception := "exception"
 strict := "strict"
 async :=  "async"
 
+
+
+
 //statement
 statement := blockStatement | definitionStatement | returnStatement | whileStatement |  matchStatement |  branchStatement | throwStatement | assignStatement | singleExpression 
 statementList := statement statementList ||
@@ -85,13 +88,15 @@ endOfBranch := elseStatement ||
 typeOfDefinition := "let" | "const"
 typeOfVar := ":"? type! ||
 
-
+expressionMember := expression memberCompoundOpt
 expression := function | boolArithmetic
 boolArithmetic := comparisonArithmetic boolRight!
 comparisonArithmetic := arithmetic comparisonRight!
 arithmetic := term arithmeticRight!
 term := factor termRight!
-factor := unary | not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | member
+factor := unary | not | number | boolLiteral | string | "("? boolArithmetic! ")"?! | reference
+
+reference := id 
 
 
 boolRight := boolArithmeticFunc boolArithmetic! ||

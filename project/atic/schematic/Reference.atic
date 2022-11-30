@@ -1,0 +1,64 @@
+use atic.schematic.Path;
+use atic.schematic.Expression;
+use atic.schematic.Context;
+use atic.schematic.type.Type;
+use atic.schematic.type.StaticTypes;
+use atic.schematic.type.TypeSystem;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.Node;
+use atic.schematic.project.Project;
+use atic.schematic.Atic;
+
+
+
+
+enum Reference {
+    Function(StaticFunction);
+    Initialisation(Struct);
+    Enum(Enum);
+    Local(Variable);
+}
+
+fn referenceFromTree(node: Node, context: Context) -> Reference {
+    node.assertType("reference")
+    let startID: string = node.id();
+    let contextVar = context.askForLocal(startID);
+    if contextVar matches Some(localVar) { 
+        return Reference.Local(localVar);
+    } else {
+        let pathOption = context.askFor(Path(startID));
+        match pathOption {
+            Function(staticFunction) -> {
+                return Reference.Function(staticFunction);
+            }
+            Enum(enum_) -> {
+                return Reference.Enum(enum_);
+            }
+            Interface(struct_) -> {
+                return Reference.Initialisation(struct_);
+            }
+        }
+    }
+}
+
+fn referenceAsType(ref: Reference) -> Type {
+    match ref {
+        Function(StaticFunction) -> {
+            let inputs = newList<Type>();
+            staticFunction.inputs.forEach(fn (var) {
+                insert(inputs, var.type);
+            });
+            return Type.Function(FunctionType(inputs, staticFunction.output, staticFunction.generics));
+        }
+        Initialisation(struct_) -> {
+            return Type.StructReference(struct_);
+        }
+        Enum(enum_) -> {
+            return Type.EnumReference(enum_);
+        }
+        Local(variable) -> {
+            return variable.type;
+        }
+    }
+}
+

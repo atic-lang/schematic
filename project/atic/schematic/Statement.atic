@@ -42,7 +42,7 @@ struct MatchCase {
 
 struct AssignStatement {
     expression: Expression;
-    member: Member;
+    member: ExpressionMember;
 }
 
 struct BranchStatement {
@@ -68,7 +68,7 @@ struct ReturnStatement {
 }
 
 struct SingleStatement {
-    member: Member;
+    member: ExpressionMember;
 }
 
 struct WhileStatement {

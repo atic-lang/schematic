@@ -152,9 +152,11 @@ native fn <T> containsArray(list: lst T, element: T) -> bool {}
 
 native fn isDirectory(file: string) -> bool {}
 native fn listFiles(file: string) -> List<string> {}
+native fn lines(src: string) -> List<string> {}
 native fn loadFile(file: string) -> string {}
 native fn saveFile(file: string, context: string) {}
 native fn getExtension(file: string) -> string {}
+native fn getBaseName(file: string) -> string {}
 native fn absFile(file: string) -> string {}
 native fn stringToNumber(src: string) -> number {}
 native fn replace(str: string, target: string, replacement: string) -> string {}

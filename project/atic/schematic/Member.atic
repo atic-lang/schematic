@@ -25,7 +25,7 @@ enum Access {
     Array(Type, Expression);
     Call(Type, List<Expression>);
     Member(Type, number);
-    Method(StaticFunction, List<Expression>);
+    Method(StaticFunction);
 }
 
 fn memberUsages(member: Member) -> List<Variable> {
@@ -143,9 +143,6 @@ fn memberFromTree(node: Node, context: Context) -> Member {
                     } else {
                         throw AssertError("cant find any option for " + optionName + " in " + enum_.path.path);
                     }
-                }
-                Global() -> {
-                    throw AssertError("global not impl");
                 }
                 Interface(struct_) -> {
                     if nodeComponents.size != 1 {

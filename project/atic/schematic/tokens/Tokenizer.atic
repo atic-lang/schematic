@@ -70,12 +70,13 @@ fn findToken(str: string, list: List<Token>) -> Optional<Token> {
 }
 
 fn genToken(alias: string, peek: string, capture: string) -> Token  {
-
+    let peekStr = "^" + peek;
+    let capStr = "^" + capture + "$";
     if alias == "string" {
         return Token(
                 alias,
                 fn (text: string) -> bool {
-                    return regexTest(text, "^" + peek);
+                    return regexTest(text, peekStr);
                 },
                 fn (text_: string) -> bool {
                     let waitFor = false;
@@ -105,10 +106,10 @@ fn genToken(alias: string, peek: string, capture: string) -> Token  {
     return Token(
         alias,
         fn (text: string) -> bool {
-            return regexTest(text, "^" + peek);
+            return regexTest(text, peekStr);
         },
         fn (text_: string) -> bool {
-            return regexTest(text_, "^" + capture + "$");
+            return regexTest(text_, capStr);
         }
     );
 }

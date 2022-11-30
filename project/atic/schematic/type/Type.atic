@@ -9,6 +9,10 @@ enum Type {
     Enum(EnumImpl);
     Function(FunctionType);
     Generic(GenericType);
+
+    StructReference(Struct);
+    EnumReference(Enum);
+
     Array(Type);
     Primitive(string);
 }

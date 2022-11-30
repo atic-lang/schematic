@@ -1,0 +1,74 @@
+use atic.schematic.Routing;
+use atic.schematic.tokens.Node;
+
+struct LexConfig {
+    tokens: List<Token>;
+    rules: RuleSet;
+    extensions: List<string>;
+}
+
+fn loadFolder(router: PathRouter, file: string, config: LexConfig) {
+    let subFiles =  file.listFiles();
+    subFiles.forEach(fn (ref) {
+        if ref.isDirectory() {
+            let baseName = ref.getBaseName();
+            let subRouter = PathRouter(Optional.Some(router), baseName, newList<RouterEntry>());
+            router.addRouter(subRouter);
+            subRouter.loadFolder(ref, extensions, config);
+        } else {
+            let extension = ref.getExtension();
+            if config.extensions.doesMatchAny(fn (ref) {
+                return extension == ref;
+            }) {
+                router.loadFile(ref, config);
+            }
+        }
+    });
+}
+
+fn loadFile(router: PathRouter, file: string, config: LexConfig) {
+    let baseName = file.getBaseName();
+    let src = file.loadFile();
+    let node = src.generateLexNode(config);
+    let unit = PathUnit(router, baseName, newList<PathUnit>(), newList<UnitEntry>(), node);
+    router.addUnit(unit);
+}
+
+fn generateLexNode(str: string, config: LexConfig) -> Node {
+    let list: List<TokenRecord> = newList<TokenRecord>();
+
+    let lineCount = Ref(0);
+    src.lines().forEachI(fn (line, i) {
+        let result = generateTokens(config.tokens, line, i);
+        result.forEach(fn (record) {
+            if record.token.alias != "#comment" && record.token.alias != "#whitespace" {
+                list.insert(token);
+            }
+        });
+    });    
+
+    let unused = newMap<string, number>();
+    let node: Node = reverseRule(config.rules,"entry", filtered, unused);
+    return node;
+}
+
+fn loadUnitsFlat(list: List<PathUnit>, root: PathRouter) {
+    router.entries.forEach(fn (ref) {
+        if ref matches Router(subRouter) { 
+            list.loadUnitsFlat(subRouter);
+        } else matches Unit(unit) {
+            list.insert(unit);
+        }
+    });
+}
+
+fn build(project: Project) {
+    let list = newList<PathUnit>();
+    list.loadUnitsFlat(project.pathRoot);
+
+
+    list.forEach(fn (ref) {
+
+    });
+
+}

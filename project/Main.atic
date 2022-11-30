@@ -27,7 +27,8 @@ fn main() {
         newList<Unit>(),
         fileFormats,
         defaultImports,
-        newList<RichFunction>()
+        newList<RichFunction>(),
+        PathRouter(Optional.None<PathRouter>, "root", newList<RouterEntry>())
     );
     let src: string = loadFile("C:/Users/Moritz/Documents/Projects/atic/schematic/project/CFG.txt");
     let ruleSet = generateRuleSet(split(src, "\n"));
@@ -375,17 +376,17 @@ fn generateNode(src: string, tokens: List<Token>, rules: RuleSet, usageMap: Map<
 
     //Atic Code:
 
-    let tryParse = ruleentry(generateTokenStream(filtered));
-    if tryParse matches Some(node) {
-      return node;
-    } else matches None() {
-      throw AssertError("Cant parse unit");
-    }
+    //let tryParse = ruleentry(generateTokenStream(filtered));
+    //if tryParse matches Some(node) {
+    //  return node;
+    //} else matches None() {
+    //  throw AssertError("Cant parse unit");
+    //}
 
     //Grammar File:
 
-    // let node: Node = reverseRule(rules,"entry",filtered, usageMap);
-    // return node;
+    let node: Node = reverseRule(rules,"entry",filtered, usageMap);
+    return node;
 }
 
 fn forFile(file: string, list: List<string>) {

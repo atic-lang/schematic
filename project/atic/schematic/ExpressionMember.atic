@@ -1,0 +1,122 @@
+use atic.schematic.Member;
+use atic.schematic.type.Type;
+use atic.schematic.type.TypeSystem;
+use atic.schematic.type.StaticTypes;
+use atic.schematic.Context;
+use atic.schematic.tokens.Tokenizer;
+use atic.schematic.tokens.Node;
+use atic.schematic.Expression;
+use atic.schematic.Atic;
+
+struct ExpressionMember {
+    expression: Expression;
+    accessType: AccessType;
+    remainingAccess: List<Access>;
+    type: Type;
+}
+
+enum AccessType {
+    Default();
+    EnumInit(Enum, EnumEntry);
+    StructInit(Struct);
+}
+
+fn expressionMemberFromTree
+(node: Node, context: Context, hint: Optional<Type>, openQuery: MatchQuery) -> ExpressionMember {
+    node.assertType("expressionMember");
+    let expression = exprFromNode(node.getNode("expression"), context, hint, openQuery);
+
+    let typeOfAccess = AccessType.Default();
+    let remainders = newList<Access>();
+
+    let currentType = getExprType(expression);
+    let currentEnumEntry = Optional.None<EnumEntry>();
+
+    let compounds = pingPong("varTerminal", "memberCompound", "memberCompoundOpt", node.getNode("memberCompoundOpt"));
+    
+    let i = 0;
+    let size = compounds.size;
+
+    while i < size {
+        let memberNode: Node = getAt(compounds, i);
+        let subTerm: Node = child(memberNode);
+        let subName = subTerm.name;
+        if subName == "memberAccess" {
+            let memberName: string = subTerm.id();
+            let tryAsStatic = true; 
+            if currentType matches Struct(structImpl) {
+                tryAsStatic = false;
+                let counter = Ref(0);
+
+                let list: List<BIEntry<string,Type>> = getMembers(structImpl);
+                let memberOption = list.findAny(fn (member) {
+                    counter = counter + 1;
+                    if member.key == memberName {
+                        return true;
+                    }
+                })
+                if memberOption matches Some(memberImpl) {
+                    let access = Access.Member(memberImpl, counter.value);
+                    remainders.insert(access);
+                    currentType = memberImpl;
+                } else {
+                    tryAsStatic = true;
+                }
+
+            } else if currentType matches EnumReference(enumRef) {
+                let find = enumRef.members.findAny(fn (entry) {
+                    return entry.name == memberName;
+                });
+                if find matches None() {
+                    throw AssertError("Cant find enum member named " + memberName);
+                } else matches Some(member) {
+                    currentEnumEntry = Optional.Some(member);
+                }
+                tryAsStatic = false;
+            } 
+
+            if tryAsStatic {
+                let pathOption = askFor(context, Path(memberName));
+                if pathOption matches Some(pathEntry) {
+                    if pathEntry matches Function(staticFunction) {
+                        let argList = newList<Type>();
+                        forEach(staticFunction.inputs, fn (var: Variable) -> void {
+                            insert(argList, var.type);
+                        });
+
+                        let asFunctionType = FunctionType(argList, staticFunction.output, staticFunction.generics);
+                        let access = Access.Method(staticFunction);
+                        insert(compounds, access);
+                        typeRef.value = Type.Function(asFunctionType);
+                    } else {
+                        throw AssertError("cant find function or member " + memberName);
+                    }
+                } else {
+                    throw AssertError("cant access member or cant find static function from " + memberName);
+                }
+            } 
+
+        } else if subName == "callAccess" {
+            if currentEnumEntry matches Some(enumEntry) {
+                currentEnumEntry = Optional.None<EnumEntry>();
+                
+            } else if currentType matches Function(function) {
+                
+            }
+        } else if subName == "arrayAccess" {
+            if currentType matches Array(type) {
+
+            }
+        } else {
+            throw AssertError("unknown access a here");
+        }
+
+        i = i + 1;
+    }
+
+    if currentEnumEntry matches Some(entry) {
+
+    }
+    
+    return ExpressionMember(expression, typeOfAccess, remainders, currentType);
+}

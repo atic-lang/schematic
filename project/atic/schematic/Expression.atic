@@ -39,7 +39,7 @@ enum Factor {
     Not(Factor);
     NegUnary(Factor);
     String(string);
-    Member(Member);
+    Reference(reference);
 }
 
 
@@ -221,9 +221,9 @@ fn factorFromTree(node: Node, context: Context) -> Factor {
         let subFactor = factorFromTree(getNode(expr, "factor"), context);
         assertExprType(Type.Primitive("bool"), getFactorType(subFactor), "only invert a boolean");
         return Factor.Not(subFactor);
-    } else if isPresent(node, "member") {
-       let expr = getNode(node, "member");
-       return Factor.Member(memberFromTree(expr, context));
+    } else if isPresent(node, "reference") {
+       let ref = node.getNode("reference");
+       return Factor.Reference(ref.referenceFromTree(context));
     } else {
         let typeN = child(node).name;
         throw AssertError(typeN + " is not impl");
@@ -294,8 +294,8 @@ fn getFactorType(expr: Factor) -> Type {
         String(str) -> {
             return Type.Primitive("string");
         }
-        Member(member) -> {
-            return member.returnType;
+        Reference(ref) -> {
+            return ref.referenceAsType();
         }
     }
 }
@@ -380,8 +380,10 @@ fn factorUsage(expr: Factor) -> List<Variable> {
         String(string) -> {
 
         }
-        Member(member) -> {
-            addAll(variables, memberUsages(member));
+        Reference(ref) -> {
+            if ref matches Local(variable) {
+                variables.insert(ref);
+            }
         }
     }
     return variables;
