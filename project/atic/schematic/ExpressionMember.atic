@@ -87,7 +87,7 @@ fn expressionMemberFromTree
                         let asFunctionType = FunctionType(argList, staticFunction.output, staticFunction.generics);
                         let access = Access.Method(staticFunction);
                         insert(compounds, access);
-                        typeRef.value = Type.Function(asFunctionType);
+                        currentType = Type.Function(asFunctionType);
                     } else {
                         throw AssertError("cant find function or member " + memberName);
                     }
@@ -101,7 +101,12 @@ fn expressionMemberFromTree
                 currentEnumEntry = Optional.None<EnumEntry>();
                 
             } else if currentType matches Function(function) {
-                
+                let call = callAccess(CallableType.Function(function, Optional.None<Type>()), subTerm, context);
+                let access = Access.Call(call.returnType, call.arguments);
+                insert(compounds, access);
+                currentType = call.returnType;
+            } else {
+                throw AssertError("You can only throw an error");
             }
         } else if subName == "arrayAccess" {
             if currentType matches Array(type) {

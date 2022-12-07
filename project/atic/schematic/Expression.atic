@@ -6,6 +6,10 @@ use atic.schematic.Context;
 use atic.schematic.tokens.Tokenizer;
 use atic.schematic.tokens.Node;
 use atic.schematic.Atic;
+use atic.schematic.ExpressionMember;
+use atic.schematic.Routing;
+use atic.schematic.Reference;
+
 
 enum Expression {
     Bool(BoolExpression);
@@ -39,7 +43,7 @@ enum Factor {
     Not(Factor);
     NegUnary(Factor);
     String(string);
-    Reference(reference);
+    Reference(Reference);
 }
 
 

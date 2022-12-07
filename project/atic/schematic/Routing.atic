@@ -1,5 +1,7 @@
 use atic.schematic.Atic;
-
+use atic.schematic.tokens.Node;
+use atic.schematic.ExpressionMember;
+use atic.schematic.Reference;
 
 
 struct PathRouter {
@@ -56,7 +58,7 @@ fn naviagteToUnit(router: PathRouter, routing: List<string>) -> PathUnit {
         } else {
             throw AssertError("cant import subpath " + bob + " from a Unit");
         }
-        index += 1;
+        index = index + 1;
     }
 
     if entry matches Unit(unit) {

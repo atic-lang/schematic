@@ -16,7 +16,7 @@ use atic.schematic.Statement;
 use atic.schematic.Expression;
 
 fn main() {
-    print("newest syntax test");
+    print("Atic State v3");
     let defaultImports = newList<Path>();
     insert(defaultImports, Path("Core"));
     let fileFormats = newList<string>();
@@ -28,7 +28,7 @@ fn main() {
         fileFormats,
         defaultImports,
         newList<RichFunction>(),
-        PathRouter(Optional.None<PathRouter>, "root", newList<RouterEntry>())
+        PathRouter(Optional.None<PathRouter>(), "root", newList<RouterEntry>())
     );
     let src: string = loadFile("C:/Users/Moritz/Documents/Projects/atic/schematic/project/CFG.txt");
     let ruleSet = generateRuleSet(split(src, "\n"));

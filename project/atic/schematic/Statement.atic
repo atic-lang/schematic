@@ -7,6 +7,9 @@ use atic.schematic.tokens.Node;
 use atic.schematic.type.Type;
 use atic.schematic.type.TypeSystem;
 use atic.schematic.type.StaticTypes;
+use atic.schematic.ExpressionMember;
+use atic.schematic.Routing;
+use atic.schematic.Reference;
 
 enum Statement {
     Block(BlockStatement);
