@@ -57,13 +57,13 @@ async :=  "async"
 statement := blockStatement | definitionStatement | returnStatement | whileStatement |  matchStatement |  branchStatement | throwStatement | assignStatement | singleExpression 
 statementList := statement statementList ||
 blockStatement := "{"? statementList! "}"?!
-definitionStatement := typeOfDefinition id! typeOfVar! "="?! expression! endOfStatement!
-whileStatement := "while"? expression! statement!
-branchStatement := "if"? expression! matches! statement! endOfBranch!
+definitionStatement := typeOfDefinition id! typeOfVar! "="?! expressionMember! endOfStatement!
+whileStatement := "while"? expressionMember! statement!
+branchStatement := "if"? expressionMember! matches! statement! endOfBranch!
 returnStatement := "return"? returnValue!
-returnValue := ";"? | expression endOfStatement! ||
-assignStatement := member "="? expression! endOfStatement!
-singleExpression := member endOfStatement!
+returnValue := ";"? | expressionMember endOfStatement! ||
+assignStatement := expressionMember "="? expressionMember! endOfStatement!
+//singleExpression := expressionMember endOfStatement!
 
 matches := "matches"? nChain! "("?! idList! ")"?! ||
 
@@ -120,8 +120,8 @@ memberCompoundOpt := memberCompound ||
 varTerminal := memberAccess | callAccess | arrayAccess
 memberAccess := "."? id!
 callAccess := genericsOptionalType "("? argList! ")"?!
-arrayAccess := "["? expression! "]"?!
-argList := expression endL ||
+arrayAccess := "["? expressionMember! "]"?!
+argList := expressionMember endL ||
 endL := ","? argList ||
 
 //operators

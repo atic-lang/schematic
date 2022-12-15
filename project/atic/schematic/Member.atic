@@ -60,18 +60,16 @@ fn usagesFromAccess(accesses: List<Access>) -> List<Variable> {
     let variables = newList<Variable>();
     forEach(accesses, fn(access: Access) -> void {
         match access {
-            Array(Type, expression) -> {
+            Array(type, expression) -> {
                 addAll(variables, expressionUsages(expression));
             }
-            Call(Type, expressions) -> {
+            Call(type, expressions) -> {
                 forEach(expressions, fn(expr: Expression) -> void {
                     addAll(variables, expressionUsages(expr));
                 });
             }
-            Method(unused, expressions) -> {
-                forEach(expressions, fn(expr: Expression) -> void {
-                    addAll(variables, expressionUsages(expr));
-                });
+            Method(function) -> {
+               
             }
             Member(Type, number) -> {
                 
@@ -80,7 +78,6 @@ fn usagesFromAccess(accesses: List<Access>) -> List<Variable> {
     });
     return variables;
 }
-
 
 fn memberFromTree(node: Node, context: Context) -> Member {
     assertType(node, "member");

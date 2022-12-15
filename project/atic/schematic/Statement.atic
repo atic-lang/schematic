@@ -33,7 +33,7 @@ struct ThrowStatement {
 }
 
 struct MatchStatement {
-    expression: Expression;
+    expression: ExpressionMember;
     definition: EnumImpl;
     statements: Map<EnumEntry, MatchCase>;
 }
@@ -44,12 +44,12 @@ struct MatchCase {
 }
 
 struct AssignStatement {
-    expression: Expression;
+    expression: ExpressionMember;
     member: ExpressionMember;
 }
 
 struct BranchStatement {
-    expression: Expression;
+    expression: ExpressionMember;
     thenStatement: Statement;
     elseStatement: Statement;
     branchMatch: BranchMatch;
@@ -63,11 +63,11 @@ enum BranchMatch {
 
 struct DeclarationStatement {
     variable: Variable;
-    expression: Expression;
+    expression: ExpressionMember;
 }
 
 struct ReturnStatement {
-    expression: Optional<Expression>;
+    expression: Optional<ExpressionMember>;
 }
 
 struct SingleStatement {
@@ -97,9 +97,10 @@ fn statementFromNode(node: Node, context: Context) -> Statement {
     } else if name == "assignStatement" {
         return Statement.Assign(assignFromTree(child_, context));
     } else if name == "singleExpression" {
-        let memberChild = getNode(child_, "member");
-        let member = memberFromTree(memberChild, context)
-        return Statement.Single(SingleStatement(member));
+       // let memberChild = getNode(child_, "member");
+       // let member = memberFromTree(memberChild, context)
+       // return Statement.Single(SingleStatement(member));
+       throw AssertError("singleExpression not impl");
     } else if name == "throwStatement" {
         return Statement.Throw(throwFromTree(child_, context));
     } else if name == "matchStatement" {
@@ -190,7 +191,7 @@ fn throwFromTree(node: Node, context: Context) -> ThrowStatement {
 
 fn assignFromTree(node: Node, context: Context) -> AssignStatement {
     assertType(node, "assignStatement");
-    let member = memberFromTree(getNode(node, "member"),context);
+    let member = expressionMemberFromTree(getNode(node, "member"),context);
     let assignExpr = exprFromNode(getNode(node, "expression"),context, Optional.Some(member.returnType), emptyQuery());
     if member.type matches Local(variable, list) {
         if list.size == 0 {
@@ -333,7 +334,7 @@ fn branchFromTree(node: Node, context: Context) -> BranchStatement {
 
 fn whileFromTree(node: Node, context: Context) -> WhileStatement {
     assertType(node, "whileStatement");
-    let expr = exprFromNode(getNode(node, "expression"),context, Optional.None<Type>(), emptyQuery());
+    let expr = expressionMemberFromTree(getNode(node, "expressionMember"),context, Optional.None<Type>(), emptyQuery());
     let conditionType = getExprType(expr);
     assertExprType(Type.Primitive("bool"), conditionType, "while condition not a bool");
     let copyContext = contextCopy(context);

@@ -386,7 +386,7 @@ fn factorUsage(expr: Factor) -> List<Variable> {
         }
         Reference(ref) -> {
             if ref matches Local(variable) {
-                variables.insert(ref);
+                variables.insert(variable);
             }
         }
     }
